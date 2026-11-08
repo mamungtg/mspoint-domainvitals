@@ -40,9 +40,18 @@ healthy() {
 
 log "deploying $TAG (previous: ${PREV_TAG:-none})"
 [[ "${SKIP_PULL:-0}" == 1 ]] || compose "$TAG" pull --quiet  # SKIP_PULL=1 only for local testing
-compose "$TAG" up -d db redis
+# --wait blocks until db/redis report healthy (first boot of Postgres
+# initialises the cluster and restarts once, which takes a few seconds).
+compose "$TAG" up -d --wait --wait-timeout 120 db redis
 log "running migrations"
-compose "$TAG" run --rm --no-deps backend python manage.py migrate --noinput
+for attempt in 1 2 3 4 5; do
+  if compose "$TAG" run --rm --no-deps backend python manage.py migrate --noinput; then
+    break
+  fi
+  if [[ $attempt -eq 5 ]]; then log "migrations failed after $attempt attempts"; exit 1; fi
+  log "migrate attempt $attempt failed; retrying in 5s"
+  sleep 5
+done
 compose "$TAG" up -d --remove-orphans
 
 if healthy; then
