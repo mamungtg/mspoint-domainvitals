@@ -1,0 +1,13 @@
+# Local development dependencies only (Django and Vite run on the host).
+name: domainvitals-dev
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_DB: domainvitals, POSTGRES_USER: domainvitals, POSTGRES_PASSWORD: domainvitals }
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [devpg:/var/lib/postgresql/data]
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:6379:6379"]
+volumes:
+  devpg:

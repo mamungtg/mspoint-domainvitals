@@ -1,0 +1,8 @@
+Django==5.2.19
+djangorestframework==3.16.1
+django-environ==0.12.1
+django-cors-headers==4.7.0
+drf-spectacular==0.28.0
+psycopg[binary]==3.2.13
+celery[redis]==5.5.3
+gunicorn==23.0.0
