@@ -57,10 +57,21 @@ services:
   web:
     image: ${IMAGE_PREFIX:?}-web:${IMAGE_TAG:?}
     restart: unless-stopped
-    ports: ["80:80", "443:443"]
+    # Bound to localhost only: public traffic arrives through the Cloudflare
+    # Tunnel; the deploy health check uses https://127.0.0.1:443.
+    ports: ["127.0.0.1:80:80", "127.0.0.1:443:443"]
     volumes: ["./certs:/etc/nginx/certs:ro"]
     depends_on:
       backend: { condition: service_healthy }
+    logging: *logging
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.4.0
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    depends_on: [web]
     logging: *logging
 
 volumes:
