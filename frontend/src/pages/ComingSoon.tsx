@@ -1,10 +1,12 @@
-import { Card } from "../components/ui";
+import { Card, PageHeader } from "../components/ui";
 
-export default function ComingSoon({ title, when }: { title: string; when: string }) {
+export default function ComingSoon({ title, description, when }: { title: string; description: string; when: string }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
-      <Card><p className="text-sm text-slate-600">This section is being built and arrives in {when}.</p></Card>
-    </div>
+    <>
+      <PageHeader title={title} description={description} />
+      <Card>
+        <p className="text-muted">This part of DomainVitals is being built and arrives in {when}.</p>
+      </Card>
+    </>
   );
 }

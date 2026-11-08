@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Alert, Button, Card, Field, Input, Select } from "../components/ui";
+import { Alert, Button, Card, Field, Input, PageHeader, Select } from "../components/ui";
 import { api, errorText, isManager } from "../lib/api";
 import { useWorkspace } from "../lib/workspace";
 import { timezones } from "./timezones";
@@ -34,8 +34,8 @@ export default function WorkspaceSettings() {
   if (!current) return null;
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900">Workspace settings</h1>
-      <Card>
+      <PageHeader title="Settings" description="Name and time zone for this workspace." />
+      <Card title="Workspace">
         <form onSubmit={onSubmit} className="max-w-md space-y-4" noValidate>
           <Field label="Name"><Input value={name} disabled={!editable} maxLength={120} onChange={(e) => setName(e.target.value)} /></Field>
           <Field label="Time zone">

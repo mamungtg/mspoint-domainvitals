@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { Alert, Spinner } from "../components/ui";
+import { linkCls } from "../components/ui";
 import { api, errorText, Organization } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useWorkspace } from "../lib/workspace";
@@ -30,11 +31,11 @@ export default function AcceptInvite() {
       {error ? (
         <div className="space-y-4">
           <Alert>{error}</Alert>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             You are signed in as <strong>{user?.email}</strong>. The invitation must be accepted by the address it was sent to,
             after verifying that email address.
           </p>
-          <Link className="font-medium text-sky-700" to="/dashboard">Go to dashboard</Link>
+          <Link className={linkCls} to="/dashboard">Go to dashboard</Link>
         </div>
       ) : <Spinner label="Joining workspace…" />}
     </AuthLayout>

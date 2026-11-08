@@ -40,8 +40,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route element={<RequireWorkspace />}>
                 <Route element={<AppLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/domains" element={<ComingSoon title="Domains" when="Sprint 2" />} />
-                  <Route path="/alerts" element={<ComingSoon title="Alerts" when="Sprint 5" />} />
+                  <Route path="/domains" element={<ComingSoon title="Domains" description="Every domain this workspace monitors." when="the next release" />} />
+                  <Route path="/alerts" element={<ComingSoon title="Alerts" description="Problems that need someone to act." when="a later release" />} />
                   <Route path="/settings/members" element={<Members />} />
                   <Route path="/settings/workspace" element={<WorkspaceSettings />} />
                   <Route path="/settings" element={<Navigate to="/settings/workspace" replace />} />

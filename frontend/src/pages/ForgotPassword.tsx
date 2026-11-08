@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { Alert, Button, Field, Input } from "../components/ui";
+import { linkCls } from "../components/ui";
 import { api, errorText } from "../lib/api";
 
 export default function ForgotPassword() {
@@ -25,7 +26,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout title="Reset your password" subtitle="We'll email you a link to choose a new password."
-      footer={<Link className="font-medium text-sky-700" to="/login">Back to sign in</Link>}>
+      footer={<Link className={linkCls} to="/login">Back to sign in</Link>}>
       {sent ? (
         <Alert tone="success">If an account exists for {email}, a reset link is on its way.</Alert>
       ) : (

@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { Alert, Button, Field, Input } from "../components/ui";
+import { linkCls } from "../components/ui";
 import { api, errorText } from "../lib/api";
 
 export default function ResetPassword() {
@@ -35,7 +36,7 @@ export default function ResetPassword() {
       {done ? (
         <div className="space-y-4">
           <Alert tone="success">Your password has been changed.</Alert>
-          <Link className="font-medium text-sky-700" to="/login">Sign in</Link>
+          <Link className={linkCls} to="/login">Sign in</Link>
         </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4" noValidate>

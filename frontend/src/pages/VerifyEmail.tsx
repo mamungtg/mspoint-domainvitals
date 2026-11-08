@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { Alert, Spinner } from "../components/ui";
+import { linkCls } from "../components/ui";
 import { api, errorText } from "../lib/api";
 import { useAuth } from "../lib/auth";
 
@@ -28,14 +29,14 @@ export default function VerifyEmail() {
       {state === "done" && (
         <div className="space-y-4">
           <Alert tone="success">Your email address is verified.</Alert>
-          <Link className="font-medium text-sky-700" to={user ? "/dashboard" : "/login"}>Continue</Link>
+          <Link className={linkCls} to={user ? "/dashboard" : "/login"}>Continue</Link>
         </div>
       )}
       {state === "error" && (
         <div className="space-y-4">
           <Alert>{error}</Alert>
-          <p className="text-sm text-slate-600">Sign in and use “Resend link” to get a new one.</p>
-          <Link className="font-medium text-sky-700" to={user ? "/dashboard" : "/login"}>Continue</Link>
+          <p className="text-sm text-muted">Sign in and use “Resend link” to get a new one.</p>
+          <Link className={linkCls} to={user ? "/dashboard" : "/login"}>Continue</Link>
         </div>
       )}
     </AuthLayout>

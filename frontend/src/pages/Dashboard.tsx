@@ -1,38 +1,51 @@
 import { Link } from "react-router-dom";
-import { Card } from "../components/ui";
+import { Card, cls, linkCls, PageHeader } from "../components/ui";
 import { isManager } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useWorkspace } from "../lib/workspace";
 
-const COMING = [
-  { title: "Add your first domain", body: "Verify ownership with a DNS TXT record, then DomainVitals checks SPF, DKIM, DMARC, MX and SSL/TLS.", soon: "Sprint 2" },
-  { title: "DMARC reports", body: "Point your rua address to DomainVitals and see who sends mail as your domain.", soon: "Sprint 4" },
-  { title: "Alerts", body: "Get notified about DNS changes, failing authentication and expiring certificates.", soon: "Sprint 5" },
-];
+type Step = { title: string; body: string; done: boolean; action?: { to: string; label: string }; later?: string };
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { current } = useWorkspace();
+  const manager = isManager(current?.role);
+
+  const steps: Step[] = [
+    { title: "Confirm your email address", body: "Needed before you can invite teammates or receive alerts.", done: !!user?.email_verified },
+    { title: "Add your first domain", body: "Enter a domain you manage, such as a client's main website domain.", done: false, later: "Available in the next release" },
+    { title: "Prove you control it", body: "Publish one TXT record so DomainVitals only scans domains you are allowed to check.", done: false, later: "Available in the next release" },
+    ...(manager ? [{ title: "Invite your team", body: "Give colleagues access with the right role.", done: false,
+      action: { to: "/settings/members", label: "Invite teammates" } }] : []),
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Welcome{user?.full_name ? `, ${user.full_name}` : ""}</h1>
-        <p className="text-sm text-slate-600">Workspace: {current?.name}</p>
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {COMING.map((c) => (
-          <Card key={c.title} title={c.title}>
-            <p className="text-sm text-slate-600">{c.body}</p>
-            <p className="mt-3 text-xs font-medium text-slate-500">Coming in {c.soon}</p>
-          </Card>
-        ))}
-      </div>
-      {isManager(current?.role) && (
-        <Card title="Your team">
-          <p className="text-sm text-slate-600">Invite colleagues to share this workspace.</p>
-          <Link to="/settings/members" className="mt-3 inline-block text-sm font-medium text-sky-700">Manage members →</Link>
-        </Card>
-      )}
-    </div>
+    <>
+      <PageHeader
+        title={user?.full_name ? `Welcome, ${user.full_name.split(" ")[0]}` : "Welcome"}
+        description={`Here is where ${current?.name ?? "your workspace"} stands.`}
+      />
+      <Card title="Get set up" description={`${doneCount} of ${steps.length} steps done`} padded={false}>
+        <ol className="divide-y divide-line">
+          {steps.map((s, i) => (
+            <li key={s.title} className="flex gap-4 px-5 py-4">
+              <span className={cls("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold",
+                s.done ? "bg-pass text-white" : "border border-line bg-white text-navy-900")} aria-hidden="true">
+                {s.done ? "✓" : i + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={cls("font-medium", s.done ? "text-muted line-through decoration-muted/50" : "text-navy-900")}>
+                  {s.title}<span className="sr-only">{s.done ? " (done)" : ""}</span>
+                </p>
+                <p className="mt-0.5 text-sm text-muted">{s.body}</p>
+                {!s.done && s.action && <Link to={s.action.to} className={cls(linkCls, "mt-2 inline-block text-sm")}>{s.action.label}</Link>}
+                {!s.done && s.later && <p className="mt-2 text-xs font-medium text-orange-700">{s.later}</p>}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Card>
+    </>
   );
 }

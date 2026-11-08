@@ -1,1 +1,52 @@
 @import "tailwindcss";
+
+/* Self-hosted fonts (no third-party font requests - GDPR friendly). */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+
+@theme {
+  /* MSPoint brand */
+  --color-navy-950: #0a1529;
+  --color-navy-900: #0f1f3d;
+  --color-navy-800: #172c52;
+  --color-navy-700: #1f3a66;
+  --color-navy-100: #e6ebf3;
+  --color-orange-500: #f47920;
+  --color-orange-600: #e06810;
+  --color-orange-700: #b4520a;   /* orange for text on white (AA) */
+  --color-orange-50: #fff4ec;
+
+  /* Neutrals */
+  --color-ink: #1b2433;
+  --color-muted: #5a6577;
+  --color-line: #dde3ec;
+  --color-canvas: #f5f7fa;
+
+  /* Health status - always paired with a text label */
+  --color-pass: #1e7a4f;
+  --color-pass-bg: #e8f5ee;
+  --color-warn: #8a5a00;
+  --color-warn-bg: #fdf3dc;
+  --color-fail: #b42318;
+  --color-fail-bg: #fdecea;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { background: var(--color-canvas); color: var(--color-ink); font-size: 15px; line-height: 1.55; }
+  h1, h2, h3 { font-family: var(--font-display); color: var(--color-navy-900); letter-spacing: -0.01em; }
+  :focus-visible { outline: 2px solid var(--color-orange-500); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+}
+
+/* One deliberate moment: the pulse line draws in once on load. */
+@keyframes vitals-draw { from { stroke-dashoffset: 900; } to { stroke-dashoffset: 0; } }
+.vitals-line { stroke-dasharray: 900; animation: vitals-draw 1.6s ease-out 0.2s both; }

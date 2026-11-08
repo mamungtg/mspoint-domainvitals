@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Alert, Badge, Button, Card, Field, Input, Select, Spinner } from "../components/ui";
+import { Alert, Badge, Button, Card, Field, Input, PageHeader, Select, Spinner } from "../components/ui";
 import { api, errorText, Invitation, isManager, Membership, Role, ROLE_LABEL, ROLE_RANK } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useWorkspace } from "../lib/workspace";
@@ -77,15 +77,12 @@ export default function Members() {
   if (!current) return <Spinner />;
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Members</h1>
-        <p className="text-sm text-slate-600">People with access to {current.name}.</p>
-      </div>
+      <PageHeader title="Members" description={`People who can see and manage ${current.name}.`} />
       {error && <Alert>{error}</Alert>}
       {notice && <Alert tone="success">{notice}</Alert>}
 
       {manager && (
-        <Card title="Invite someone">
+        <Card title="Invite a teammate" description="They get an email with a link to join this workspace.">
           <form onSubmit={onInvite} className="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end" noValidate>
             <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="colleague@company.com" /></Field>
             <Field label="Role">
@@ -95,30 +92,30 @@ export default function Members() {
             </Field>
             <Button type="submit" busy={busy} disabled={!email}>Send invite</Button>
           </form>
-          <p className="mt-2 text-xs text-slate-500">{ROLE_HELP[role]}. Invitations expire after 7 days.</p>
+          <p className="mt-2 text-xs text-muted">{ROLE_HELP[role]}. Invitations expire after 7 days.</p>
         </Card>
       )}
 
-      <Card title="Team">
+      <Card title="Team" padded={false}>
         {members === null ? <Spinner /> : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line">
             {members.map((m) => (
-              <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-900">
-                    {m.user.full_name || m.user.email} {m.user.id === user?.id && <span className="text-slate-500">(you)</span>}
+                  <p className="truncate text-sm font-medium text-navy-900">
+                    {m.user.full_name || m.user.email} {m.user.id === user?.id && <span className="text-muted">(you)</span>}
                   </p>
-                  <p className="truncate text-xs text-slate-500">{m.user.email}</p>
+                  <p className="truncate text-xs text-muted">{m.user.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {canEdit(m) ? (
-                    <Select aria-label={`Role for ${m.user.email}`} value={m.role} className="w-32 py-1"
+                    <Select aria-label={`Role for ${m.user.email}`} value={m.role} className="h-8 w-32 text-[13px]"
                       onChange={(e) => changeRole(m, e.target.value as Role)}>
                       {assignable.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
                     </Select>
                   ) : <Badge>{ROLE_LABEL[m.role]}</Badge>}
                   {(canEdit(m) || canLeave(m)) && (
-                    <Button variant="danger" className="py-1" onClick={() => remove(m)}>
+                    <Button variant="danger" size="sm" onClick={() => remove(m)}>
                       {m.user.id === user?.id ? "Leave" : "Remove"}
                     </Button>
                   )}
@@ -130,15 +127,15 @@ export default function Members() {
       </Card>
 
       {manager && invites.length > 0 && (
-        <Card title="Pending invitations">
-          <ul className="divide-y divide-slate-100">
+        <Card title="Pending invitations" padded={false}>
+          <ul className="divide-y divide-line">
             {invites.map((i) => (
-              <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                 <div>
-                  <p className="text-sm text-slate-900">{i.email} <Badge>{ROLE_LABEL[i.role]}</Badge></p>
-                  <p className="text-xs text-slate-500">Expires {new Date(i.expires_at).toLocaleDateString()}</p>
+                  <p className="text-sm text-navy-900">{i.email} <Badge tone="brand">{ROLE_LABEL[i.role]}</Badge></p>
+                  <p className="text-xs text-muted">Expires {new Date(i.expires_at).toLocaleDateString()}</p>
                 </div>
-                <Button variant="secondary" className="py-1" onClick={() => revoke(i)}>Revoke</Button>
+                <Button variant="secondary" size="sm" onClick={() => revoke(i)}>Revoke</Button>
               </li>
             ))}
           </ul>

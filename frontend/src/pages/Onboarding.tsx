@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { Alert, Button, Field, Input, Select } from "../components/ui";
+import { linkCls } from "../components/ui";
 import { api, errorText, Organization } from "../lib/api";
 import { useWorkspace } from "../lib/workspace";
 import { browserTimezone, timezones } from "./timezones";
@@ -37,7 +38,7 @@ export default function Onboarding() {
     <AuthLayout
       title={isAdditional ? "New workspace" : "Create your workspace"}
       subtitle="A workspace holds your domains, alerts and team. Agencies usually create one for their own team."
-      footer={isAdditional ? <Link className="text-sky-700" to="/dashboard">Cancel</Link> : undefined}>
+      footer={isAdditional ? <Link className={linkCls} to="/dashboard">Cancel</Link> : undefined}>
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <Field label="Workspace name"><Input required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Acme Digital Agency" /></Field>
         <Field label="Time zone" hint="Used for reports and alert times.">

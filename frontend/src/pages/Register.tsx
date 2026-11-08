@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { safeNext } from "../components/guards";
 import { Alert, Button, Field, Input } from "../components/ui";
+import { linkCls } from "../components/ui";
 import { ApiError, errorText, FieldErrors } from "../lib/api";
 import { useAuth } from "../lib/auth";
 
@@ -34,7 +35,7 @@ export default function Register() {
 
   return (
     <AuthLayout title="Create your account" subtitle="Start monitoring your domains in minutes."
-      footer={<>Already have an account? <Link className="font-medium text-sky-700" to="/login">Sign in</Link></>}>
+      footer={<>Already have an account? <Link className={linkCls} to="/login">Sign in</Link></>}>
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <Field label="Full name" error={fieldErrors.full_name?.[0]}>
           <Input autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
