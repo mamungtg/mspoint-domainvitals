@@ -1,0 +1,10 @@
+#!/bin/sh
+# Run docker compose against the live DomainVitals stack with the deployed
+# image tag. Installed to /opt/domainvitals/dc by deploy.sh.
+#   sudo -u ghrunner /opt/domainvitals/dc ps
+#   sudo -u ghrunner /opt/domainvitals/dc logs --tail=50 backend
+#   sudo -u ghrunner /opt/domainvitals/dc exec backend python manage.py createsuperuser
+set -eu
+cd "$(dirname "$0")"
+[ -f .deploy.env ] || { echo "No .deploy.env yet - run a deploy first." >&2; exit 1; }
+exec docker compose --env-file .env --env-file .deploy.env -f docker-compose.yml "$@"

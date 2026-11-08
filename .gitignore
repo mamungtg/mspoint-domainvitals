@@ -10,3 +10,5 @@ node_modules/
 frontend/dist/
 *.tsbuildinfo
 .DS_Store
+backend/.mail/
+dump.rdb

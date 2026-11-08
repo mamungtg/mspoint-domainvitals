@@ -22,11 +22,18 @@ log() { printf '[deploy %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 [[ -f "$APP_DIR/certs/origin.pem" && -f "$APP_DIR/certs/origin.key" ]] || { log "missing origin certificate in $APP_DIR/certs"; exit 1; }
 
 install -m 0644 "$REPO_DIR/docker-compose.prod.yml" "$APP_DIR/docker-compose.yml"
+install -m 0755 "$REPO_DIR/infrastructure/scripts/dc" "$APP_DIR/dc"
 cd "$APP_DIR"
 
 PREV_TAG="$(cat .current_tag 2>/dev/null || true)"
 export IMAGE_PREFIX
 compose() { IMAGE_TAG="$1" docker compose -f docker-compose.yml "${@:2}"; }
+
+# Records the live release so ./dc can run compose commands by hand.
+mark_live() {
+  echo "$1" > .current_tag
+  printf 'IMAGE_PREFIX=%s\nIMAGE_TAG=%s\n' "$IMAGE_PREFIX" "$1" > .deploy.env
+}
 
 healthy() {
   for _ in $(seq 1 45); do
@@ -55,7 +62,7 @@ done
 compose "$TAG" up -d --remove-orphans
 
 if healthy; then
-  echo "$TAG" > .current_tag
+  mark_live "$TAG"
   log "healthy; $TAG is live"
   docker image prune -af --filter "until=168h" >/dev/null || true
   exit 0
@@ -67,6 +74,6 @@ compose "$TAG" logs --tail=80 backend web || true
 if [[ -n "$PREV_TAG" ]]; then
   log "rolling back to $PREV_TAG"
   compose "$PREV_TAG" up -d --remove-orphans
-  if healthy; then log "rollback healthy"; else log "rollback ALSO unhealthy - manual action needed"; fi
+  if healthy; then mark_live "$PREV_TAG"; log "rollback healthy"; else log "rollback ALSO unhealthy - manual action needed"; fi
 fi
 exit 1

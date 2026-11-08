@@ -1,55 +1,43 @@
 import { FormEvent, useState } from "react";
-import { api, ApiError, User } from "../lib/api";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import AuthLayout from "../components/AuthLayout";
+import { safeNext } from "../components/guards";
+import { Alert, Button, Field, Input } from "../components/ui";
+import { errorText } from "../lib/api";
+import { useAuth } from "../lib/auth";
 
 export default function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setError(null);
+    setBusy(true); setError("");
     try {
-      setUser(await api<User>("/auth/login/", { method: "POST", body: JSON.stringify({ email, password }) }));
+      await login(email, password);
+      navigate(safeNext(params.get("next")), { replace: true });
     } catch (err) {
-      setError((err as ApiError).message ?? "Sign-in failed.");
+      setError(errorText(err, "Sign-in failed."));
     } finally {
       setBusy(false);
     }
   }
 
-  if (user) {
-    return (
-      <main className="mx-auto max-w-sm px-4 py-24">
-        <h1 className="text-2xl font-semibold">Signed in</h1>
-        <p className="mt-2 text-slate-600">{user.email}</p>
-        {!user.email_verified && <p className="mt-2 text-amber-700">Please verify your email address.</p>}
-      </main>
-    );
-  }
-
   return (
-    <main className="mx-auto max-w-sm px-4 py-24">
-      <h1 className="text-2xl font-semibold">Sign in to DomainVitals</h1>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <label className="block">
-          <span className="text-sm text-slate-700">Email</span>
-          <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        <label className="block">
-          <span className="text-sm text-slate-700">Password</span>
-          <input type="password" required autoComplete="current-password" value={password}
-            onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button disabled={busy} className="w-full rounded-md bg-slate-900 px-4 py-2 text-white disabled:opacity-60">
-          {busy ? "Signing in…" : "Sign in"}
-        </button>
+    <AuthLayout title="Sign in" subtitle="Welcome back."
+      footer={<>No account yet? <Link className="font-medium text-sky-700" to={`/register${params.get("next") ? `?next=${encodeURIComponent(params.get("next")!)}` : ""}`}>Create one</Link></>}>
+      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        <Field label="Email"><Input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+        <Field label="Password"><Input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+        {error && <Alert>{error}</Alert>}
+        <Button type="submit" busy={busy} className="w-full">Sign in</Button>
+        <p className="text-center text-sm"><Link className="text-sky-700" to="/forgot-password">Forgot your password?</Link></p>
       </form>
-    </main>
+    </AuthLayout>
   );
 }
