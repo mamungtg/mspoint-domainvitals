@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.organizations",
     "apps.audit",
+    "apps.domains",
+    "apps.dns_monitor",
 ]
 
 MIDDLEWARE = [
@@ -128,6 +130,8 @@ REST_FRAMEWORK = {
         "password_reset": env("THROTTLE_PASSWORD_RESET", default="5/hour"),
         "verify_email": env("THROTTLE_VERIFY_EMAIL", default="20/hour"),
         "invite": env("THROTTLE_INVITE", default="30/hour"),
+        "tools": env("THROTTLE_TOOLS", default="30/hour"),
+        "domain_write": env("THROTTLE_DOMAIN_WRITE", default="60/hour"),
     },
 }
 
@@ -154,6 +158,17 @@ CELERY_TASK_TIME_LIMIT = 120
 CELERY_TASK_SOFT_TIME_LIMIT = 90
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULE = {
+    "dns-scan-due-domains": {"task": "apps.dns_monitor.tasks.schedule_due_scans", "schedule": 15 * 60},
+    "recheck-domain-verification": {"task": "apps.dns_monitor.tasks.recheck_verifications", "schedule": 6 * 60 * 60},
+}
+
+# --- DNS monitoring ----------------------------------------------------------
+DNS_RESOLVERS = env.list("DNS_RESOLVERS", default=["1.1.1.1", "8.8.8.8", "9.9.9.9"])
+DNS_SCAN_INTERVAL_HOURS = env.int("DNS_SCAN_INTERVAL_HOURS", 24)
+DNS_MANUAL_SCAN_COOLDOWN_SECONDS = env.int("DNS_MANUAL_SCAN_COOLDOWN_SECONDS", 60)
+DOMAIN_LIMIT_PER_ORG = env.int("DOMAIN_LIMIT_PER_ORG", 100)
+VERIFICATION_GRACE_HOURS = env.int("VERIFICATION_GRACE_HOURS", 72)
 
 # --- Email -------------------------------------------------------------------
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")

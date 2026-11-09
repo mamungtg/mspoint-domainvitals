@@ -40,9 +40,10 @@ class Organization(TimestampedModel):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="owned_organizations")
     timezone = models.CharField(max_length=64, default="UTC", validators=[validate_timezone])
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    is_demo = models.BooleanField(default=False, help_text="Read-only sample workspace.")
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["is_demo", "name"]
 
     def save(self, *args, **kwargs):
         if not self.slug:

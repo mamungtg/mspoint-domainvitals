@@ -62,6 +62,9 @@ class RegisterView(AnonymousPostView):
         )
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         record(request, "user.registered", obj=user)
+        from apps.domains.demo import ensure_demo_workspace
+
+        ensure_demo_workspace(user)  # read-only sample data to explore before adding real domains
         transaction.on_commit(lambda: send_verification_email_task.delay(str(user.pk)))
         return Response(s.UserSerializer(user).data, status=status.HTTP_201_CREATED)
 

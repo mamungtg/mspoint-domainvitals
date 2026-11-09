@@ -73,7 +73,7 @@ export function errorText(err: unknown, fallback = "Something went wrong. Please
 export type User = { id: string; email: string; full_name: string; email_verified: boolean; created_at: string };
 export type Role = "owner" | "admin" | "member" | "viewer";
 export type Organization = {
-  id: string; name: string; slug: string; timezone: string; status: string; role: Role | null; created_at: string;
+  id: string; name: string; slug: string; timezone: string; status: string; is_demo: boolean; role: Role | null; created_at: string;
 };
 export type Membership = { id: string; role: Role; created_at: string; user: { id: string; email: string; full_name: string } };
 export type Invitation = {
@@ -83,3 +83,41 @@ export type Invitation = {
 export const ROLE_LABEL: Record<Role, string> = { owner: "Owner", admin: "Admin", member: "Member", viewer: "Viewer" };
 export const ROLE_RANK: Record<Role, number> = { viewer: 0, member: 1, admin: 2, owner: 3 };
 export const isManager = (r: Role | null | undefined) => r === "owner" || r === "admin";
+
+export const canWrite = (o: Organization | null | undefined) => !!o && !o.is_demo && (o.role === "owner" || o.role === "admin" || o.role === "member");
+
+/* ---------- Domains & scans ---------- */
+export type CheckName = "spf" | "dkim" | "dmarc" | "mx";
+export type CheckStatus = "pass" | "warn" | "fail" | "error";
+export type Finding = { code: string; severity: "critical" | "warning" | "info"; title: string; detail: string; fix: string };
+export type CheckResult = {
+  check: CheckName; status: CheckStatus; summary: string; record: string | null; findings: Finding[];
+  data: Record<string, unknown>;
+};
+export type ScanSummary = {
+  id: string; status: "queued" | "running" | "completed" | "failed"; trigger: string; health_score: number | null;
+  overall_status: CheckStatus | ""; critical_count: number; warning_count: number;
+  summary: Partial<Record<CheckName, CheckStatus>>; created_at: string; completed_at: string | null;
+};
+export type ScanDetail = ScanSummary & { results: Partial<Record<CheckName, CheckResult>>; error: string; started_at: string | null };
+export type Domain = {
+  id: string; name: string; is_verified: boolean; verified_at: string | null; monitoring_enabled: boolean;
+  dkim_selectors: string[]; created_at: string; latest_scan: ScanSummary | null;
+  verification: { type: string; host: string; value: string; failing_since: string | null };
+};
+export type OverviewFinding = Finding & { domain_id: string; domain: string; check: CheckName };
+export type Overview = {
+  domains: { total: number; verified: number; unverified: number; scanned: number };
+  health: { pass: number; warn: number; fail: number; error: number; average_score: number | null };
+  issues: { critical: number; warning: number };
+  dmarc_policies: { reject: number; quarantine: number; none: number; missing: number };
+  checks: Record<CheckName, Partial<Record<CheckStatus, number>>>;
+  score_trend: { date: string; score: number | null }[];
+  attention: { domain_id: string; domain: string; score: number | null; status: CheckStatus; top_finding: string | null }[];
+  findings: OverviewFinding[];
+};
+export const CHECK_LABEL: Record<CheckName, string> = { spf: "SPF", dkim: "DKIM", dmarc: "DMARC", mx: "MX" };
+export const CHECK_LONG: Record<CheckName, string> = {
+  spf: "Sender Policy Framework", dkim: "DomainKeys Identified Mail",
+  dmarc: "Domain-based Message Authentication, Reporting and Conformance", mx: "Mail exchangers",
+};

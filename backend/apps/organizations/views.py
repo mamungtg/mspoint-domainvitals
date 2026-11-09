@@ -220,6 +220,8 @@ class MembershipDetailView(APIView):
                 raise PermissionDenied("Only an owner can remove an owner.")
         if target.role == Role.OWNER and self._owner_count(target.organization_id) <= 1:
             raise ValidationError({"detail": ["A workspace must keep at least one owner."]})
+        if target.organization.is_demo and not leaving_self:
+            raise PermissionDenied("Sample workspaces cannot be changed.")
         record(
             request,
             "organization.member_removed",
@@ -227,5 +229,8 @@ class MembershipDetailView(APIView):
             organization=target.organization,
             metadata={"user": target.user.email, "self": leaving_self},
         )
+        org = target.organization
         target.delete()
+        if org.is_demo and not org.memberships.exists():
+            org.delete()  # sample workspaces are personal; drop them once left
         return Response(status=status.HTTP_204_NO_CONTENT)

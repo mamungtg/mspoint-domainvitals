@@ -102,7 +102,7 @@ export default function Members() {
             {members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-navy-900">
+                  <p className="truncate text-sm font-medium text-heading">
                     {m.user.full_name || m.user.email} {m.user.id === user?.id && <span className="text-muted">(you)</span>}
                   </p>
                   <p className="truncate text-xs text-muted">{m.user.email}</p>
@@ -132,7 +132,7 @@ export default function Members() {
             {invites.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                 <div>
-                  <p className="text-sm text-navy-900">{i.email} <Badge tone="brand">{ROLE_LABEL[i.role]}</Badge></p>
+                  <p className="text-sm text-heading">{i.email} <Badge tone="brand">{ROLE_LABEL[i.role]}</Badge></p>
                   <p className="text-xs text-muted">Expires {new Date(i.expires_at).toLocaleDateString()}</p>
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => revoke(i)}>Revoke</Button>

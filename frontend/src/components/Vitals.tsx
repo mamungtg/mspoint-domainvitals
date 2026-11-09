@@ -17,7 +17,7 @@ export function VitalsPanel({ domain, vitals, checkedAt }: { domain: string; vit
       </figcaption>
       <svg viewBox="0 0 400 48" className="mt-3 h-10 w-full" aria-hidden="true">
         <path className="vitals-line" d="M0 26h120l14-18 18 34 16-24 10 8h84l12-12 14 22 10-10h102"
-          fill="none" stroke="#F47920" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+          fill="none" stroke="#F5A623" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
       </svg>
       <dl className="mt-3 divide-y divide-white/10">
         {vitals.map((v) => (

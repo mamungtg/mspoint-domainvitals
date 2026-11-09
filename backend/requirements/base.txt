@@ -6,3 +6,4 @@ drf-spectacular==0.28.0
 psycopg[binary]==3.2.13
 celery[redis]==5.5.3
 gunicorn==23.0.0
+dnspython==2.7.0

@@ -33,8 +33,8 @@ export default function Home() {
   useEffect(() => { api<{ status: string }>("/health/").then((h) => setApiUp(h.status === "ok")).catch(() => setApiUp(false)); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-navy-900">
+    <div className="min-h-screen bg-white" data-theme="light">
+      <div className="bg-gradient-to-b from-navy-700 to-navy-800">
         <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
           <Link to="/" aria-label="DomainVitals home"><Logo inverse /></Link>
           <nav className="flex shrink-0 items-center gap-2 whitespace-nowrap">
@@ -65,7 +65,7 @@ export default function Home() {
               {!user && <Link to="/login" className="rounded-md border border-white/20 px-5 py-3 font-medium text-white hover:bg-white/10">Sign in</Link>}
             </div>
           </div>
-          <VitalsPanel domain="harbourdental.co.uk" checkedAt="Checked 4 minutes ago" vitals={SAMPLE} />
+          <VitalsPanel domain="harbour-dental.example" checkedAt="Checked 4 minutes ago" vitals={SAMPLE} />
         </section>
       </div>
 
@@ -100,7 +100,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="bg-navy-950 text-navy-100/70">
+      <footer className="bg-navy-900 text-navy-100/70">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm sm:px-8">
           <span>© {new Date().getFullYear()} MSPoint LLC</span>
           <span className="flex items-center gap-2">
