@@ -64,6 +64,18 @@ function Details({ r }: { r: CheckResult }) {
       </ul>
     );
   }
+  if (r.check === "dns" && Array.isArray(d.name_servers)) {
+    return d.name_servers.length ? (
+      <ul className="divide-y divide-line rounded-md border border-line text-sm">
+        {d.name_servers.map((n: { ns: string; authoritative: boolean; serial: number | null; error: string }) => (
+          <li key={n.ns} className="flex items-center justify-between gap-3 px-3 py-2">
+            <span className="min-w-0 truncate text-heading">{n.ns}{n.serial != null && <span className="ml-2 text-xs text-muted">serial {n.serial}</span>}</span>
+            <StatusPill status={n.authoritative ? "pass" : "warn"} label={n.authoritative ? "Answering" : "Not answering"} />
+          </li>
+        ))}
+      </ul>
+    ) : null;
+  }
   return null;
 }
 

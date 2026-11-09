@@ -5,8 +5,9 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 
+from .changes import diff_records
 from .checks import run_checks
-from .models import DnsScan
+from .models import DnsChange, DnsScan
 from .resolver import BaseResolver, LiveResolver
 
 logger = logging.getLogger(__name__)
@@ -33,13 +34,36 @@ def queue_scan(domain, trigger=DnsScan.Trigger.MANUAL) -> DnsScan:
     return scan
 
 
+def record_changes(scan: DnsScan) -> list[DnsChange]:
+    """Store differences against the previous completed scan with a full inventory.
+    The first scan of a domain is the baseline and produces no changes."""
+    prev = (
+        DnsScan.objects.filter(
+            domain_id=scan.domain_id, status=DnsScan.Status.COMPLETED, created_at__lt=scan.created_at
+        )
+        .exclude(pk=scan.pk)
+        .exclude(records={})
+        .order_by("-created_at")
+        .first()
+    )
+    if prev is None or not scan.records:
+        return []
+    when = scan.completed_at or timezone.now()
+    rows = [
+        DnsChange(domain_id=scan.domain_id, scan=scan, detected_at=when, **c)
+        for c in diff_records(prev.records, scan.records)
+    ]
+    return DnsChange.objects.bulk_create(rows)
+
+
 def execute_scan(scan: DnsScan, resolver: BaseResolver | None = None, when=None) -> DnsScan:
     domain = scan.domain
     scan.status = DnsScan.Status.RUNNING
     scan.started_at = when or timezone.now()
     scan.save(update_fields=["status", "started_at"])
     try:
-        out = run_checks(domain.name, resolver or resolver_for(domain), domain.dkim_selectors)
+        hosts = [f"www.{domain.name}"] + [h for h in (domain.dns_watch_names or []) if h != f"www.{domain.name}"]
+        out = run_checks(domain.name, resolver or resolver_for(domain), domain.dkim_selectors, hosts=hosts)
     except Exception as exc:  # never leave a scan stuck in "running"
         logger.exception("scan %s failed", scan.pk)
         scan.status = DnsScan.Status.FAILED
@@ -53,9 +77,14 @@ def execute_scan(scan: DnsScan, resolver: BaseResolver | None = None, when=None)
     scan.critical_count = out["critical"]
     scan.warning_count = out["warning"]
     scan.summary = out["summary"]
+    dns_result = out["results"].get("dns", {})
+    scan.records = dns_result.get("data", {}).pop("records", {}) if dns_result else {}
     scan.results = out["results"]
     scan.completed_at = when or timezone.now()
-    scan.save()
+    with transaction.atomic():
+        scan.save()
+        if dns_result and dns_result.get("status") != "error":
+            record_changes(scan)
     latest = domain.latest_scan
     if latest is None or latest.created_at <= scan.created_at:
         type(domain).objects.filter(pk=domain.pk).update(latest_scan=scan)

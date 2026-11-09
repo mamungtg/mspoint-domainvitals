@@ -87,7 +87,7 @@ export const isManager = (r: Role | null | undefined) => r === "owner" || r === 
 export const canWrite = (o: Organization | null | undefined) => !!o && !o.is_demo && (o.role === "owner" || o.role === "admin" || o.role === "member");
 
 /* ---------- Domains & scans ---------- */
-export type CheckName = "spf" | "dkim" | "dmarc" | "mx";
+export type CheckName = "spf" | "dkim" | "dmarc" | "mx" | "dns";
 export type CheckStatus = "pass" | "warn" | "fail" | "error";
 export type Finding = { code: string; severity: "critical" | "warning" | "info"; title: string; detail: string; fix: string };
 export type CheckResult = {
@@ -102,7 +102,7 @@ export type ScanSummary = {
 export type ScanDetail = ScanSummary & { results: Partial<Record<CheckName, CheckResult>>; error: string; started_at: string | null };
 export type Domain = {
   id: string; name: string; is_verified: boolean; verified_at: string | null; monitoring_enabled: boolean;
-  dkim_selectors: string[]; created_at: string; latest_scan: ScanSummary | null;
+  dkim_selectors: string[]; dns_watch_names: string[]; created_at: string; latest_scan: ScanSummary | null;
   verification: { type: string; host: string; value: string; failing_since: string | null };
 };
 export type OverviewFinding = Finding & { domain_id: string; domain: string; check: CheckName };
@@ -116,7 +116,19 @@ export type Overview = {
   attention: { domain_id: string; domain: string; score: number | null; status: CheckStatus; top_finding: string | null }[];
   findings: OverviewFinding[];
   tls: CertSummary & { soonest: CertRow[] };
+  recent_changes: (DnsChange & { domain_id: string; domain: string })[];
 };
+
+export type DnsRecordRow = { name: string; type: string; ttl: number | null; values: string[]; last_changed: string | null; tracked_since: string | null };
+export type NameServer = { ns: string; ip: string; authoritative: boolean; serial: number | null; error: string };
+export type DnsRecords = { scanned_at: string | null; records: DnsRecordRow[]; name_servers: NameServer[];
+  soa?: { primary: string; serial: number; refresh: number; retry: number; expire: number; minimum: number } | null; hosts?: string[] };
+export type DnsChange = { id: string; name: string; rtype: string; kind: "added" | "removed" | "changed" | "ttl";
+  old_values: string[]; new_values: string[]; old_ttl: number | null; new_ttl: number | null; detected_at: string };
+export type PropagationServer = { kind: "authoritative" | "public"; server: string; ip: string; values?: string[]; ttl?: number | null;
+  status: "match" | "different" | "missing" | "error"; error?: string };
+export type Propagation = { name: string; type: string; zone: string; expected: string[]; servers: PropagationServer[];
+  matched: number; answered: number; total: number; propagated: boolean };
 
 export type CertRow = {
   id: string; hostname: string; port: number; label: string; enabled: boolean; domain_id: string; domain: string;
@@ -138,8 +150,9 @@ export type HostScan = {
     self_signed?: boolean;
   };
 };
-export const CHECK_LABEL: Record<CheckName, string> = { spf: "SPF", dkim: "DKIM", dmarc: "DMARC", mx: "MX" };
+export const CHECK_LABEL: Record<CheckName, string> = { spf: "SPF", dkim: "DKIM", dmarc: "DMARC", mx: "MX", dns: "DNS" };
 export const CHECK_LONG: Record<CheckName, string> = {
   spf: "Sender Policy Framework", dkim: "DomainKeys Identified Mail",
   dmarc: "Domain-based Message Authentication, Reporting and Conformance", mx: "Mail exchangers",
+  dns: "Name servers, SOA, host records and TTLs",
 };

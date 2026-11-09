@@ -20,6 +20,8 @@ class Domain(TimestampedModel):
     verification_failing_since = models.DateTimeField(null=True, blank=True)
     monitoring_enabled = models.BooleanField(default=True)
     dkim_selectors = models.JSONField(default=list, blank=True)
+    # Extra host names whose A/AAAA/CNAME records are tracked (www.<domain> is always included).
+    dns_watch_names = models.JSONField(default=list, blank=True)
     added_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )

@@ -8,7 +8,7 @@ import { useApi } from "../lib/useApi";
 import { useWorkspace } from "../lib/workspace";
 
 type Filter = "all" | "fail" | "warn" | "pass" | "unverified";
-const CHECKS: CheckName[] = ["spf", "dkim", "dmarc", "mx"];
+const CHECKS: CheckName[] = ["spf", "dkim", "dmarc", "mx", "dns"];
 
 function bucket(d: Domain): Filter {
   if (!d.is_verified) return "unverified";

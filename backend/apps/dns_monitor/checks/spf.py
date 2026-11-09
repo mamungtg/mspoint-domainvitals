@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ipaddress
+
 from ..resolver import BaseResolver, DnsLookupError
 from .base import CRITICAL, INFO, WARNING, CheckResult
 
@@ -130,6 +132,29 @@ def check_spf(domain: str, resolver: BaseResolver) -> CheckResult:
         res.data.update(
             lookups=w.lookups, lookup_limit=LOOKUP_LIMIT, void_lookups=w.voids, includes=w.includes, all=all_q
         )
+
+        # Syntax of the top-level record: ip4/ip6 networks and repeated terms.
+        seen: dict[str, int] = {}
+        for t in terms:
+            q, name, value = _split(t)
+            key = (name + ":" + (value or "")).lower()
+            seen[key] = seen.get(key, 0) + 1
+            if name in ("ip4", "ip6"):
+                try:
+                    net = ipaddress.ip_network((value or "").strip(), strict=False)
+                    if (name == "ip4") != (net.version == 4):
+                        raise ValueError
+                except ValueError:
+                    w.errors.append(("spf_syntax", f"'{t}' is not a valid {name} address or network."))
+        dupes = [k.rstrip(":") for k, n in seen.items() if n > 1]
+        if dupes:
+            res.add(
+                "spf_duplicate",
+                WARNING,
+                "Repeated SPF terms",
+                f"These appear more than once: {', '.join(dupes)}. Repeats waste DNS lookups and usually mean the record was edited by hand.",
+                "Keep one copy of each term.",
+            )
 
         for code, msg in w.errors:
             sev = CRITICAL if code in ("spf_syntax", "spf_include_missing", "spf_depth") else WARNING

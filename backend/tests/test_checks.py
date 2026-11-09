@@ -148,9 +148,20 @@ class TestMx:
 
 
 def test_run_checks_scores_and_summarises():
-    zone = {D: {"TXT": ["v=spf1 +all"], "MX": []}}
+    zone = {
+        D: {
+            "TXT": ["v=spf1 +all"],
+            "MX": [],
+            "A": ["203.0.113.5"],
+            "NS": ["ns1.dns.net", "ns2.dns.net"],
+            "SOA": [f"ns1.dns.net. admin.{D}. 1 7200 3600 1209600 3600"],
+        },
+        "ns1.dns.net": {"A": ["192.0.2.1"]},
+        "ns2.dns.net": {"A": ["192.0.2.2"]},
+    }
     out = run_checks(D, FakeResolver(zone))
-    assert out["summary"] == {"spf": "fail", "dkim": "warn", "dmarc": "fail", "mx": "warn"}
+    # healthy DNS infrastructure, so only the four email checks affect the score
+    assert out["summary"] == {"spf": "fail", "dkim": "warn", "dmarc": "fail", "mx": "warn", "dns": "pass"}
     assert out["score"] == 100 - 25 * 2 - 10 * 2 and out["overall"] == "fail"
 
 

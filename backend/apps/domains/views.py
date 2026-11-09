@@ -12,9 +12,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.services import record
-from apps.dns_monitor.checks import run_checks, verify_ownership
+from apps.dns_monitor.checks import CHECK_ORDER, run_checks, verify_ownership
 from apps.dns_monitor.checks.dkim import check_dkim
 from apps.dns_monitor.checks.dmarc import check_dmarc
+from apps.dns_monitor.checks.infra import check_infra
 from apps.dns_monitor.checks.mx import check_mx
 from apps.dns_monitor.checks.spf import check_spf
 from apps.dns_monitor.models import DnsScan
@@ -92,7 +93,11 @@ class DomainDetailView(APIView):
         _require_write(m)
         ser = s.DomainSerializer(
             domain,
-            data={k: v for k, v in request.data.items() if k in ("monitoring_enabled", "dkim_selectors")},
+            data={
+                k: v
+                for k, v in request.data.items()
+                if k in ("monitoring_enabled", "dkim_selectors", "dns_watch_names")
+            },
             partial=True,
         )
         ser.is_valid(raise_exception=True)
@@ -115,6 +120,28 @@ class DomainDetailView(APIView):
         )
         domain.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def _recent_changes(org_id, limit=8):
+    from apps.dns_monitor.models import DnsChange
+
+    rows = DnsChange.objects.filter(domain__organization_id=org_id).select_related("domain")[:limit]
+    return [
+        {
+            "id": str(c.id),
+            "domain_id": str(c.domain_id),
+            "domain": c.domain.name,
+            "name": c.name,
+            "rtype": c.rtype,
+            "kind": c.kind,
+            "old_values": c.old_values,
+            "new_values": c.new_values,
+            "old_ttl": c.old_ttl,
+            "new_ttl": c.new_ttl,
+            "detected_at": c.detected_at.isoformat(),
+        }
+        for c in rows
+    ]
 
 
 def _tls_summary(org):
@@ -211,7 +238,7 @@ class OverviewView(APIView):
         scanned = [d for d in domains if d.latest_scan and d.latest_scan.status == DnsScan.Status.COMPLETED]
         status_count = Counter(d.latest_scan.overall_status for d in scanned)
         policies = Counter()
-        check_status = {c: Counter() for c in ("spf", "dkim", "dmarc", "mx")}
+        check_status = {c: Counter() for c in CHECK_ORDER}
         attention, findings = [], []
         for d in scanned:
             sc = d.latest_scan
@@ -220,7 +247,7 @@ class OverviewView(APIView):
             for c in check_status:
                 check_status[c][sc.summary.get(c, "unknown")] += 1
             top = None
-            for c in ("spf", "dkim", "dmarc", "mx"):
+            for c in CHECK_ORDER:
                 for f in (sc.results.get(c) or {}).get("findings", []):
                     if f["severity"] in ("critical", "warning"):
                         findings.append({"domain_id": str(d.pk), "domain": d.name, "check": c, **f})
@@ -281,6 +308,7 @@ class OverviewView(APIView):
                 "attention": attention[:6],
                 "findings": findings[:10],
                 "tls": _tls_summary(m.organization),
+                "recent_changes": _recent_changes(org_id),
             }
         )
 
@@ -299,10 +327,17 @@ class ToolCheckView(APIView):
         resolver = LiveResolver()
         if check == "all":
             out = run_checks(name, resolver, selectors)
+            out["results"].get("dns", {}).get("data", {}).pop("records", None)
             return Response({"domain": name, **out})
-        fn = {"spf": check_spf, "dmarc": check_dmarc, "mx": check_mx}.get(check)
-        result = check_dkim(name, resolver, selectors) if check == "dkim" else fn(name, resolver)
-        return Response({"domain": name, "results": {check: result.to_dict()}, "summary": {check: result.status}})
+        if check == "dkim":
+            result = check_dkim(name, resolver, selectors)
+        elif check == "dns":
+            result = check_infra(name, resolver, hosts=[f"www.{name}"], dkim_selectors=[])
+        else:
+            result = {"spf": check_spf, "dmarc": check_dmarc, "mx": check_mx}[check](name, resolver)
+        body = result.to_dict()
+        body.get("data", {}).pop("records", None)
+        return Response({"domain": name, "results": {check: body}, "summary": {check: result.status}})
 
 
 class DemoWorkspaceView(APIView):

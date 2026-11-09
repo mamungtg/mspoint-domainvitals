@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { DaysLeft } from "../components/CertTable";
+import { ChangeDiff } from "../components/DnsRecords";
 import { ExpiryChart, Legend, ScoreLineChart, Segment, StackedBar } from "../components/charts";
 import { IconGlobe, IconPlus } from "../components/icons";
-import { Alert, Badge, Button, Card, EmptyState, KpiTile, linkCls, PageHeader, ScoreRing, Spinner, StatusPill } from "../components/ui";
+import { Alert, Badge, Button, Card, EmptyState, KpiTile, linkCls, PageHeader, ScoreRing, Spinner, StatusPill, timeAgo } from "../components/ui";
 import { api, canWrite, CHECK_LABEL, CheckName, errorText, Organization, Overview as OverviewData } from "../lib/api";
 import { useApi } from "../lib/useApi";
 import { useWorkspace } from "../lib/workspace";
@@ -118,6 +119,27 @@ export default function Overview() {
                       <span className="block truncate text-xs text-muted">{c.issuer ?? "Unknown issuer"}</span>
                     </span>
                     <span className="text-sm"><DaysLeft days={c.days_left} /></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+      )}
+
+      {data.recent_changes.length > 0 && (
+        <div className="mt-6">
+          <Card title="Recent DNS changes" description="Record sets that changed between scans across your domains" padded={false}>
+            <ul className="divide-y divide-line">
+              {data.recent_changes.map((c) => (
+                <li key={c.id}>
+                  <Link to={`/domains/${c.domain_id}?tab=records`} className="grid gap-1.5 px-5 py-3 hover:bg-subtle sm:grid-cols-[minmax(0,16rem)_1fr_auto] sm:items-start sm:gap-4">
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2"><Badge>{c.rtype}</Badge><span className="truncate text-sm font-medium text-heading">{c.name === c.domain ? "@" : c.name.replace(`.${c.domain}`, "")}</span></span>
+                      <span className="mt-0.5 block text-xs text-muted">{c.domain}</span>
+                    </span>
+                    <span className="min-w-0"><ChangeDiff c={c} /></span>
+                    <span className="text-xs text-muted sm:text-right">{timeAgo(c.detected_at)}</span>
                   </Link>
                 </li>
               ))}

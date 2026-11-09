@@ -101,7 +101,7 @@ def test_verify_then_scan(make_user, make_org, client_for, fake_dns, django_capt
     scans = c.get(f"/api/v1/domains/{d['id']}/scans/").data
     assert len(scans) == 2
     detail = c.get(f"/api/v1/scans/{scans[0]['id']}/").data
-    assert set(detail["results"]) == {"spf", "dkim", "dmarc", "mx"}
+    assert set(detail["results"]) == {"spf", "dkim", "dmarc", "mx", "dns"}
 
 
 def test_patch_selectors_validation(make_user, make_org, client_for):
@@ -148,5 +148,9 @@ def test_tools_check(make_user, client_for, fake_dns):
     r = c.post("/api/v1/tools/check/", {"domain": "acme.com", "check": "spf"}, format="json")
     assert r.status_code == 200 and r.data["summary"] == {"spf": "pass"}
     r = c.post("/api/v1/tools/check/", {"domain": "acme.com"}, format="json")
-    assert set(r.data["summary"]) == {"spf", "dkim", "dmarc", "mx"}
+    assert set(r.data["summary"]) == {"spf", "dkim", "dmarc", "mx", "dns"}
+    assert "records" not in r.data["results"]["dns"]["data"]
+    r = c.post("/api/v1/tools/check/", {"domain": "acme.com", "check": "dns"}, format="json")
+    assert r.status_code == 200 and set(r.data["summary"]) == {"dns"}
+    assert "name_servers" in r.data["results"]["dns"]["data"] and "records" not in r.data["results"]["dns"]["data"]
     assert c.post("/api/v1/tools/check/", {"domain": "10.0.0.1"}, format="json").status_code == 400

@@ -6,20 +6,27 @@ from ..resolver import BaseResolver, DnsLookupError
 from .base import CRITICAL, ERROR, FAIL, PASS, WARN, WARNING, CheckResult
 from .dkim import check_dkim
 from .dmarc import check_dmarc
+from .infra import check_infra
 from .mx import check_mx
 from .spf import check_spf
 
-CHECK_ORDER = ["spf", "dkim", "dmarc", "mx"]
+CHECK_ORDER = ["spf", "dkim", "dmarc", "mx", "dns"]
 PENALTY = {CRITICAL: 25, WARNING: 10}
 
 
-def run_checks(domain: str, resolver: BaseResolver, dkim_selectors: list[str] | None = None) -> dict:
+def run_checks(
+    domain: str, resolver: BaseResolver, dkim_selectors: list[str] | None = None, hosts: list[str] | None = None
+) -> dict:
     results: dict[str, CheckResult] = {
         "spf": check_spf(domain, resolver),
         "dkim": check_dkim(domain, resolver, dkim_selectors),
         "dmarc": check_dmarc(domain, resolver),
         "mx": check_mx(domain, resolver),
     }
+    found = [k["selector"] for k in results["dkim"].data.get("selectors", [])]
+    results["dns"] = check_infra(
+        domain, resolver, hosts=hosts if hosts is not None else [f"www.{domain}"], dkim_selectors=found
+    )
     findings = [f for r in results.values() for f in r.findings]
     critical = sum(1 for f in findings if f.severity == CRITICAL)
     warning = sum(1 for f in findings if f.severity == WARNING)
@@ -53,4 +60,13 @@ def verify_ownership(domain: str, token: str, resolver: BaseResolver) -> bool:
     return any(t.strip() == expected for t in txts)
 
 
-__all__ = ["run_checks", "verify_ownership", "CHECK_ORDER", "check_spf", "check_dkim", "check_dmarc", "check_mx"]
+__all__ = [
+    "run_checks",
+    "verify_ownership",
+    "CHECK_ORDER",
+    "check_spf",
+    "check_dkim",
+    "check_dmarc",
+    "check_mx",
+    "check_infra",
+]

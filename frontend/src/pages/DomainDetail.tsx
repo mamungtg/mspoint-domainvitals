@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import CheckCard from "../components/CheckCard";
+import DnsRecords from "../components/DnsRecords";
 import TlsHosts from "../components/TlsHosts";
 import { ScoreLineChart } from "../components/charts";
 import { IconRefresh } from "../components/icons";
@@ -13,9 +14,9 @@ import { canWrite } from "../lib/api";
 import { useApi } from "../lib/useApi";
 import { useWorkspace } from "../lib/workspace";
 
-const CHECKS: CheckName[] = ["dmarc", "spf", "dkim", "mx"];
+const CHECKS: CheckName[] = ["dmarc", "spf", "dkim", "mx", "dns"];
 const TRIGGER: Record<string, string> = { manual: "Manual", schedule: "Scheduled", verification: "After verification", demo: "Sample" };
-type Tab = "results" | "tls" | "history" | "settings";
+type Tab = "results" | "records" | "tls" | "history" | "settings";
 
 function Verification({ domain, writable, onVerified }: { domain: Domain; writable: boolean; onVerified: (d: Domain) => void }) {
   const [busy, setBusy] = useState(false);
@@ -74,7 +75,7 @@ function History({ domainId }: { domainId: string }) {
             <thead><tr className="border-b border-line bg-subtle text-left text-xs text-muted">
               <th className="px-5 py-2.5 font-medium">When</th><th className="px-3 py-2.5 font-medium">Started by</th>
               <th className="px-3 py-2.5 font-medium">Health</th>
-              {(["spf", "dkim", "dmarc", "mx"] as CheckName[]).map((c) => <th key={c} className="px-3 py-2.5 text-center font-medium">{CHECK_LABEL[c]}</th>)}
+              {(["spf", "dkim", "dmarc", "mx", "dns"] as CheckName[]).map((c) => <th key={c} className="px-3 py-2.5 text-center font-medium">{CHECK_LABEL[c]}</th>)}
               <th className="px-3 py-2.5 font-medium">Issues</th></tr></thead>
             <tbody className="divide-y divide-line">
               {data.map((s) => (
@@ -82,7 +83,7 @@ function History({ domainId }: { domainId: string }) {
                   <td className="whitespace-nowrap px-5 py-2.5 text-heading">{new Date(s.created_at).toLocaleString()}</td>
                   <td className="px-3 py-2.5 text-muted">{TRIGGER[s.trigger] ?? s.trigger}</td>
                   <td className="px-3 py-2.5">{s.status === "completed" ? <ScoreBar score={s.health_score} /> : <Badge>{s.status}</Badge>}</td>
-                  {(["spf", "dkim", "dmarc", "mx"] as CheckName[]).map((c) => <td key={c} className="px-3 py-2.5 text-center"><span className="inline-flex"><StatusIcon status={s.summary[c] ?? "none"} /></span></td>)}
+                  {(["spf", "dkim", "dmarc", "mx", "dns"] as CheckName[]).map((c) => <td key={c} className="px-3 py-2.5 text-center"><span className="inline-flex"><StatusIcon status={s.summary[c] ?? "none"} /></span></td>)}
                   <td className="px-3 py-2.5 text-muted">{s.critical_count} critical, {s.warning_count} warnings</td>
                 </tr>
               ))}
@@ -97,6 +98,7 @@ function History({ domainId }: { domainId: string }) {
 function Settings({ domain, writable, manager, onChange }: { domain: Domain; writable: boolean; manager: boolean; onChange: (d: Domain) => void }) {
   const navigate = useNavigate();
   const [selectors, setSelectors] = useState(domain.dkim_selectors.join(", "));
+  const [watch, setWatch] = useState((domain.dns_watch_names ?? []).join(", "));
   const [msg, setMsg] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState("");
   const patch = async (body: object, ok: string) => {
@@ -128,6 +130,15 @@ function Settings({ domain, writable, manager, onChange }: { domain: Domain; wri
           {writable && <Button type="submit" variant="secondary" busy={busy === "dkim_selectors"}>Save selectors</Button>}
         </form>
       </Card>
+      <Card title="Tracked host names" description={`Records for ${domain.name} and www.${domain.name} are always tracked. Add other subdomains to watch their A, AAAA and CNAME records.`}>
+        <form onSubmit={(e) => { e.preventDefault(); patch({ dns_watch_names: watch.split(/[\s,]+/).filter(Boolean) }, "Host names saved. They are tracked from the next scan."); }}
+          className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1"><Field label="Host names" hint={`Separate with commas, for example mail.${domain.name}, portal.${domain.name}`}>
+            <Input value={watch} disabled={!writable} onChange={(e) => setWatch(e.target.value)} />
+          </Field></div>
+          {writable && <Button type="submit" variant="secondary" busy={busy === "dns_watch_names"}>Save host names</Button>}
+        </form>
+      </Card>
       {domain.is_verified && (
         <Card title="Verification record" description="Keep this record published. If it disappears for three days, monitoring stops.">
           <CopyField label={`TXT at ${domain.verification.host}`} value={domain.verification.value} />
@@ -151,7 +162,9 @@ export default function DomainDetail() {
   const { data: domain, error, setData: setDomain, reload } = useApi<Domain>(`/domains/${id}/`);
   const latestId = domain?.latest_scan?.status === "completed" ? domain.latest_scan.id : null;
   const { data: scan } = useApi<ScanDetail>(latestId ? `/scans/${latestId}/` : null);
-  const [tab, setTab] = useState<Tab>("results");
+  const [params] = useSearchParams();
+  const initial = params.get("tab");
+  const [tab, setTab] = useState<Tab>(initial === "records" || initial === "tls" || initial === "history" || initial === "settings" ? initial : "results");
   const [scanMsg, setScanMsg] = useState("");
   const [scanning, setScanning] = useState(false);
   const writable = canWrite(current);
@@ -193,7 +206,7 @@ export default function DomainDetail() {
           : <Verification domain={domain} writable={writable} onVerified={(d) => setDomain(d)} />
       ) : (
         <>
-          <Tabs value={tab} onChange={setTab} items={[{ id: "results", label: "Email authentication" }, { id: "tls", label: "SSL/TLS" }, { id: "history", label: "History" }, { id: "settings", label: "Settings" }]} />
+          <Tabs value={tab} onChange={setTab} items={[{ id: "results", label: "Health" }, { id: "records", label: "DNS records" }, { id: "tls", label: "SSL/TLS" }, { id: "history", label: "History" }, { id: "settings", label: "Settings" }]} />
           <div className="mt-6">
             {tab === "results" && (!ls || !scan ? (
               <Card><Spinner label={pending ? "Running the first scan…" : "Loading results…"} /></Card>
@@ -209,7 +222,7 @@ export default function DomainDetail() {
                     <p className="mt-1 text-sm text-muted">Scanned {new Date(scan.created_at).toLocaleString()}. Each critical issue costs 25 points and each warning 10.</p>
                   </div>
                   <ul className="flex flex-wrap gap-2">
-                    {(["spf", "dkim", "dmarc", "mx"] as CheckName[]).map((c) => (
+                    {(["spf", "dkim", "dmarc", "mx", "dns"] as CheckName[]).map((c) => (
                       <li key={c} className="flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs font-semibold text-heading">
                         <StatusIcon status={scan.summary[c] ?? "none"} size={16} />{CHECK_LABEL[c]}
                       </li>
@@ -221,6 +234,7 @@ export default function DomainDetail() {
                 </div>
               </>
             ))}
+            {tab === "records" && <DnsRecords domainId={domain.id} domainName={domain.name} />}
             {tab === "tls" && <TlsHosts domain={domain} writable={writable} />}
             {tab === "history" && <History domainId={domain.id} />}
             {tab === "settings" && <Settings domain={domain} writable={writable} manager={!current?.is_demo && isManager(current?.role)} onChange={setDomain} />}

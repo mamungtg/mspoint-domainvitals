@@ -43,6 +43,7 @@ class DomainSerializer(serializers.ModelSerializer):
             "verified_at",
             "monitoring_enabled",
             "dkim_selectors",
+            "dns_watch_names",
             "verification",
             "latest_scan",
             "created_at",
@@ -69,6 +70,22 @@ class DomainSerializer(serializers.ModelSerializer):
                 cleaned.append(s)
         return cleaned
 
+    def validate_dns_watch_names(self, value):
+        if not isinstance(value, list) or len(value) > 20:
+            raise serializers.ValidationError("Provide up to 20 host names.")
+        base = self.instance.name if self.instance else ""
+        cleaned = []
+        for raw in value:
+            try:
+                h = normalize_domain(str(raw))
+            except InvalidDomain as exc:
+                raise serializers.ValidationError(f"'{raw}': {exc}") from exc
+            if not h.endswith("." + base):
+                raise serializers.ValidationError(f"'{h}' must be a subdomain of {base}.")
+            if h not in cleaned:
+                cleaned.append(h)
+        return cleaned
+
 
 class AddDomainSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=300)
@@ -82,7 +99,7 @@ class AddDomainSerializer(serializers.Serializer):
 
 class ToolCheckSerializer(serializers.Serializer):
     domain = serializers.CharField(max_length=300)
-    check = serializers.ChoiceField(choices=["all", "spf", "dmarc", "dkim", "mx"], default="all")
+    check = serializers.ChoiceField(choices=["all", "spf", "dmarc", "dkim", "mx", "dns"], default="all")
     selector = serializers.CharField(max_length=63, required=False, allow_blank=True)
 
     def validate_domain(self, value):
