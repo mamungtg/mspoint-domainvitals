@@ -6,7 +6,7 @@ import { useTheme } from "../lib/theme";
 import { useWorkspace } from "../lib/workspace";
 import {
   IconBell, IconCard, IconClose, IconFile, IconGlobe, IconHome, IconLock, IconLogout, IconMenu, IconMoon, IconSearch,
-  IconSettings, IconSun, IconUsers,
+  IconChevron, IconPlus, IconSettings, IconSun, IconUsers,
 } from "./icons";
 import { Logo } from "./Logo";
 import { cls } from "./ui";
@@ -60,18 +60,77 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 function WorkspaceSwitcher() {
   const { orgs, current, select } = useWorkspace();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    const idx = Math.max(0, orgs.findIndex((o) => o.id === current?.id));
+    itemsRef.current[idx]?.focus();
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open, orgs, current]);
+
   if (!current) return null;
+
+  const onKey = (e: React.KeyboardEvent) => {
+    const items = itemsRef.current.filter(Boolean) as HTMLButtonElement[];
+    const at = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (e.key === "Escape") { setOpen(false); (wrap.current?.querySelector("button") as HTMLButtonElement)?.focus(); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); items[(at + 1) % items.length]?.focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); items[(at - 1 + items.length) % items.length]?.focus(); }
+  };
+  const choose = (id: string) => { select(id); setOpen(false); };
+
   return (
-    <label className="flex min-w-0 items-center gap-2">
-      <span className="sr-only">Workspace</span>
-      <select value={current.id}
-        onChange={(e) => { if (e.target.value === "__new") navigate("/onboarding?new=1"); else select(e.target.value); }}
-        className="h-9 min-w-0 max-w-[16rem] truncate rounded-md border border-line bg-surface px-2.5 pr-8 text-sm font-medium text-heading focus:border-navy-700 focus:outline-none">
-        {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-        <option value="__new">Create a workspace…</option>
-      </select>
+    <div ref={wrap} className="relative flex min-w-0 items-center gap-2" onKeyDown={onKey}>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-haspopup="menu" aria-expanded={open}
+        aria-label={`Workspace: ${current.name}. Change workspace`}
+        className="flex h-9 min-w-0 max-w-[18rem] items-center gap-2.5 rounded-md border border-line bg-surface pl-2 pr-2.5 text-sm font-medium text-heading hover:bg-subtle">
+        <span className={cls("flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-semibold",
+          current.is_demo ? "bg-orange-500/15 text-accent" : "bg-navy-700 text-white")} aria-hidden="true">
+          {current.name.trim().slice(0, 1).toUpperCase()}
+        </span>
+        <span className="truncate">{current.name}</span>
+        <span className="ml-auto rotate-90 text-muted" aria-hidden="true"><IconChevron /></span>
+      </button>
       {current.is_demo && <span className="hidden rounded bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-accent sm:inline">Sample data</span>}
-    </label>
+
+      {open && (
+        <div role="menu" aria-label="Workspaces"
+          className="absolute left-0 top-11 z-40 w-72 overflow-hidden rounded-lg border border-line bg-surface py-1.5 shadow-xl shadow-navy-950/20">
+          <p className="px-3 pb-1.5 pt-1 text-xs font-medium text-muted">Workspaces</p>
+          {orgs.map((o, i) => {
+            const active = o.id === current.id;
+            return (
+              <button key={o.id} type="button" role="menuitemradio" aria-checked={active}
+                ref={(el) => { itemsRef.current[i] = el; }} onClick={() => choose(o.id)}
+                className={cls("flex w-full items-center gap-3 px-3 py-2 text-left text-sm focus:bg-subtle focus:outline-none hover:bg-subtle",
+                  active ? "text-heading" : "text-ink")}>
+                <span className={cls("flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-semibold",
+                  o.is_demo ? "bg-orange-500/15 text-accent" : "bg-navy-700 text-white")} aria-hidden="true">
+                  {o.name.trim().slice(0, 1).toUpperCase()}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{o.name}</span>
+                  <span className="block text-xs text-muted">{o.is_demo ? "Sample data, read-only" : o.role ? ROLE_LABEL[o.role] : ""}</span>
+                </span>
+                {active && <span className="text-pass" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 20 20"><path d="m5 10.5 3.2 3L15 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span>}
+              </button>
+            );
+          })}
+          <div className="my-1.5 border-t border-line" />
+          <button type="button" role="menuitem" ref={(el) => { itemsRef.current[orgs.length] = el; }}
+            onClick={() => { setOpen(false); navigate("/onboarding?new=1"); }}
+            className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm font-medium text-link hover:bg-subtle focus:bg-subtle focus:outline-none">
+            <span className="flex h-7 w-7 items-center justify-center rounded border border-dashed border-line" aria-hidden="true"><IconPlus /></span>
+            Create a workspace
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

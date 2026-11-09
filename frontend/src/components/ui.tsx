@@ -214,7 +214,7 @@ export function CopyField({ label, value }: { label?: string; value: string }) {
 }
 export function Tabs<T extends string>({ value, onChange, items }: { value: T; onChange: (v: T) => void; items: { id: T; label: string; count?: number }[] }) {
   return (
-    <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-line">
+    <div role="tablist" className="no-scrollbar flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line">
       {items.map((t) => (
         <button key={t.id} role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)}
           className={cx("relative whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors",

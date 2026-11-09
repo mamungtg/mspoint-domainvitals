@@ -72,3 +72,10 @@
 /* One deliberate moment: the pulse line draws in once on load. */
 @keyframes vitals-draw { from { stroke-dashoffset: 900; } to { stroke-dashoffset: 0; } }
 .vitals-line { stroke-dasharray: 900; animation: vitals-draw 1.6s ease-out 0.2s both; }
+
+/* Horizontal tab strips scroll on narrow screens without showing a scrollbar. */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Native dropdown lists follow the active theme (Windows Chrome/Edge paint them otherwise). */
+select option { background-color: var(--color-surface); color: var(--color-ink); }
