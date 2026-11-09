@@ -305,3 +305,15 @@ def test_summary_buckets_by_month():
     ]
     s = summarize(rows)
     assert s["total"] == 2 and s["checked"] == 1 and s["healthy"] == 1 and len(s["by_month"]) == 12
+
+
+def test_verified_domain_without_hosts_is_bootstrapped(verified_domain, client_for, monkeypatch):
+    owner, org, d = verified_domain
+    from apps.ssl_monitor import tasks
+
+    monkeypatch.setattr(tasks.scan_tls_host, "delay", lambda *a, **k: None)
+    rows = client_for(owner).get(f"/api/v1/organizations/{org.id}/certificates/").data["certificates"]
+    assert {r["hostname"] for r in rows} == {"acme.com", "www.acme.com"} and all(r["pending"] for r in rows)
+    # idempotent
+    client_for(owner).get(f"/api/v1/domains/{d.id}/tls-hosts/")
+    assert MonitoredHost.objects.filter(domain=d).count() == 2 and SslScan.objects.filter(host__domain=d).count() == 2

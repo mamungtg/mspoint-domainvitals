@@ -30,6 +30,18 @@ def _host_for(user, host_id):
     return host, membership
 
 
+def _bootstrap(domains):
+    """Verified domains that predate SSL monitoring (or lost their hosts) get
+    apex + www right away instead of waiting for the scheduler."""
+    from .services import ensure_default_hosts
+
+    for d in domains:
+        if d.is_verified and not d.organization.is_demo and not d.tls_hosts.exists():
+            ensure_default_hosts(d)
+            for host in d.tls_hosts.all():
+                _queue_now(host, "verification")
+
+
 def _queue_now(host, trigger):
     scan = queue(host, trigger)
     transaction.on_commit(lambda: scan_tls_host.delay(str(scan.pk)))
@@ -42,6 +54,8 @@ class OrgCertificatesView(APIView):
         m = get_membership_or_404(request.user, org_id)
         if m.organization.is_demo:
             seed_demo_tls(m.organization)
+        else:
+            _bootstrap(m.organization.domains.filter(verified_at__isnull=False).select_related("organization"))
         rows = certificate_rows(org_id)
         return Response({"summary": summarize(rows), "certificates": rows})
 
@@ -52,6 +66,8 @@ class DomainHostsView(APIView):
         domain, m = _domain_for(request.user, domain_id)
         if m.organization.is_demo:
             seed_demo_tls(m.organization)
+        else:
+            _bootstrap([domain])
         rows = [r for r in certificate_rows(domain.organization_id) if r["domain_id"] == str(domain.id)]
         return Response(rows)
 

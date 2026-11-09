@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import date
 
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
 from .evaluate import days_left
-from .models import MonitoredHost
+from .models import MonitoredHost, SslScan
 
 
 def _month_starts(today: date, n: int = 12) -> list[date]:
@@ -26,6 +27,7 @@ def certificate_rows(org_id):
     hosts = (
         MonitoredHost.objects.filter(domain__organization_id=org_id)
         .select_related("domain", "latest_scan")
+        .annotate(has_queued=Exists(SslScan.objects.filter(host=OuterRef("pk"), status=SslScan.Status.QUEUED)))
         .order_by("domain__name", "hostname")
     )
     for h in hosts:
@@ -43,7 +45,7 @@ def certificate_rows(org_id):
                 "domain_verified": h.domain.is_verified,
                 "status": sc.result_status if sc else None,
                 "scanned_at": sc.completed_at.isoformat() if sc and sc.completed_at else None,
-                "pending": bool(sc and sc.status == "queued"),
+                "pending": h.has_queued,
                 "days_left": days_left(cert.get("not_after", ""), now) if cert else None,
                 "not_after": cert.get("not_after") or None,
                 "issuer": cert.get("issuer_org") or cert.get("issuer") or None,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import CertTable from "../components/CertTable";
 import { ExpiryChart } from "../components/charts";
@@ -12,9 +12,16 @@ type Filter = "all" | "attention" | "healthy";
 
 export default function Certificates() {
   const { current } = useWorkspace();
-  const { data, error } = useApi<{ summary: CertSummary; certificates: CertRow[] }>(current ? `/organizations/${current.id}/certificates/` : null);
+  const { data, error, reload } = useApi<{ summary: CertSummary; certificates: CertRow[] }>(current ? `/organizations/${current.id}/certificates/` : null);
   const [month, setMonth] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
+  const pending = data?.certificates.some((c) => c.pending) ?? false;
+
+  useEffect(() => {
+    if (!pending) return;
+    const t = setInterval(() => { void reload(); }, 4000);
+    return () => clearInterval(t);
+  }, [pending, reload]);
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -36,11 +43,11 @@ export default function Certificates() {
   return (
     <>
       <PageHeader title="SSL/TLS certificates"
-        description="Every HTTPS certificate on your verified domains, checked once a day." />
+        description={pending ? "Checking certificates now. Results appear here as each check finishes." : "Every HTTPS certificate on your verified domains, checked once a day."} />
       {s.total === 0 ? (
         <Card>
           <EmptyState icon={<IconLock />} title="No certificates checked yet"
-            body="Certificates are checked automatically for each verified domain and its www host. Verify a domain to start."
+            body="Each verified domain and its www host are checked automatically. Add a domain and publish its verification record to start."
             action={<Link to="/domains"><Button>Go to domains</Button></Link>} />
         </Card>
       ) : (
