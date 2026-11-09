@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import CheckCard from "../components/CheckCard";
+import TlsHosts from "../components/TlsHosts";
 import { ScoreLineChart } from "../components/charts";
 import { IconRefresh } from "../components/icons";
 import {
@@ -14,7 +15,7 @@ import { useWorkspace } from "../lib/workspace";
 
 const CHECKS: CheckName[] = ["dmarc", "spf", "dkim", "mx"];
 const TRIGGER: Record<string, string> = { manual: "Manual", schedule: "Scheduled", verification: "After verification", demo: "Sample" };
-type Tab = "results" | "history" | "settings";
+type Tab = "results" | "tls" | "history" | "settings";
 
 function Verification({ domain, writable, onVerified }: { domain: Domain; writable: boolean; onVerified: (d: Domain) => void }) {
   const [busy, setBusy] = useState(false);
@@ -68,7 +69,7 @@ function History({ domainId }: { domainId: string }) {
     <div className="space-y-6">
       <Card title="Health score over time"><ScoreLineChart points={points} /></Card>
       <Card padded={false} title="Scans" description="The last 30 scans">
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
             <thead><tr className="border-b border-line bg-subtle text-left text-xs text-muted">
               <th className="px-5 py-2.5 font-medium">When</th><th className="px-3 py-2.5 font-medium">Started by</th>
@@ -192,7 +193,7 @@ export default function DomainDetail() {
           : <Verification domain={domain} writable={writable} onVerified={(d) => setDomain(d)} />
       ) : (
         <>
-          <Tabs value={tab} onChange={setTab} items={[{ id: "results", label: "Results" }, { id: "history", label: "History" }, { id: "settings", label: "Settings" }]} />
+          <Tabs value={tab} onChange={setTab} items={[{ id: "results", label: "Email authentication" }, { id: "tls", label: "SSL/TLS" }, { id: "history", label: "History" }, { id: "settings", label: "Settings" }]} />
           <div className="mt-6">
             {tab === "results" && (!ls || !scan ? (
               <Card><Spinner label={pending ? "Running the first scan…" : "Loading results…"} /></Card>
@@ -220,6 +221,7 @@ export default function DomainDetail() {
                 </div>
               </>
             ))}
+            {tab === "tls" && <TlsHosts domain={domain} writable={writable} />}
             {tab === "history" && <History domainId={domain.id} />}
             {tab === "settings" && <Settings domain={domain} writable={writable} manager={!current?.is_demo && isManager(current?.role)} onChange={setDomain} />}
           </div>

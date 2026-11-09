@@ -115,6 +115,28 @@ export type Overview = {
   score_trend: { date: string; score: number | null }[];
   attention: { domain_id: string; domain: string; score: number | null; status: CheckStatus; top_finding: string | null }[];
   findings: OverviewFinding[];
+  tls: CertSummary & { soonest: CertRow[] };
+};
+
+export type CertRow = {
+  id: string; hostname: string; port: number; label: string; enabled: boolean; domain_id: string; domain: string;
+  domain_verified: boolean; status: CheckStatus | null; scanned_at: string | null; pending: boolean;
+  days_left: number | null; not_after: string | null; issuer: string | null; tls_version: string | null;
+  findings: Finding[]; error: string;
+};
+export type CertSummary = {
+  total: number; checked: number; expired: number; within_7: number; within_30: number; failing: number; healthy: number;
+  unreachable: number; by_month: { month: string; count: number }[];
+};
+export type HostScan = {
+  id: string; status: "queued" | "completed" | "failed"; result_status: CheckStatus | ""; created_at: string;
+  completed_at: string | null; not_after: string | null; error: string; findings: Finding[];
+  certificate: {
+    hostname?: string; ip?: string; tls_version?: string; cipher?: string; subject_cn?: string; sans?: string[];
+    issuer?: string; issuer_org?: string; not_before?: string; not_after?: string; signature_algorithm?: string;
+    key_type?: string; key_bits?: number | null; trusted?: boolean; hostname_match?: boolean; hsts?: string | null;
+    self_signed?: boolean;
+  };
 };
 export const CHECK_LABEL: Record<CheckName, string> = { spf: "SPF", dkim: "DKIM", dmarc: "DMARC", mx: "MX" };
 export const CHECK_LONG: Record<CheckName, string> = {

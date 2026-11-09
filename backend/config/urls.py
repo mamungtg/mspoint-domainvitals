@@ -9,6 +9,7 @@ api_v1 = [
     path("health/", health, name="health"),
     path("auth/", include("apps.accounts.urls")),
     path("", include("apps.domains.urls")),
+    path("", include("apps.ssl_monitor.urls")),
     path("", include("apps.organizations.urls")),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger"),

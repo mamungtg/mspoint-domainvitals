@@ -88,7 +88,7 @@ export default function Domains() {
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search domains" className="pl-9" />
             </label>
           </div>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-y border-line bg-subtle text-left text-xs font-medium text-muted">

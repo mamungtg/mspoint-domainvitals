@@ -117,6 +117,28 @@ class DomainDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+def _tls_summary(org):
+    from apps.ssl_monitor.demo import seed_demo_tls
+    from apps.ssl_monitor.reports import certificate_rows, summarize
+
+    if org.is_demo:
+        seed_demo_tls(org)
+    rows = certificate_rows(org.id)
+    soonest = sorted((r for r in rows if r["days_left"] is not None), key=lambda r: r["days_left"])[:5]
+    return {**summarize(rows), "soonest": soonest}
+
+
+def _start_tls_monitoring(domain):
+    """Check the certificates for example.com and www.example.com right away."""
+    from apps.ssl_monitor.services import ensure_default_hosts, queue
+    from apps.ssl_monitor.tasks import scan_tls_host
+
+    ensure_default_hosts(domain)
+    for host in domain.tls_hosts.all():
+        scan = queue(host, "verification")
+        transaction.on_commit(lambda sid=str(scan.pk): scan_tls_host.delay(sid))
+
+
 class DomainVerifyView(APIView):
     throttle_scope = "domain_write"
 
@@ -141,6 +163,7 @@ class DomainVerifyView(APIView):
             request, "domain.verified", obj=domain, organization=domain.organization, metadata={"domain": domain.name}
         )
         queue_scan(domain, DnsScan.Trigger.VERIFICATION)
+        _start_tls_monitoring(domain)
         return Response(s.DomainSerializer(domain).data)
 
 
@@ -183,7 +206,7 @@ class OverviewView(APIView):
 
     @extend_schema(responses={200: dict}, tags=["domains"])
     def get(self, request, org_id):
-        get_membership_or_404(request.user, org_id)
+        m = get_membership_or_404(request.user, org_id)
         domains = list(Domain.objects.filter(organization_id=org_id).select_related("latest_scan"))
         scanned = [d for d in domains if d.latest_scan and d.latest_scan.status == DnsScan.Status.COMPLETED]
         status_count = Counter(d.latest_scan.overall_status for d in scanned)
@@ -257,6 +280,7 @@ class OverviewView(APIView):
                 "score_trend": trend,
                 "attention": attention[:6],
                 "findings": findings[:10],
+                "tls": _tls_summary(m.organization),
             }
         )
 

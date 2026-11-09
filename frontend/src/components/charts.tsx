@@ -66,3 +66,34 @@ export function Legend({ segments }: { segments: Segment[] }) {
     </ul>
   );
 }
+
+/** 12 monthly bars of certificate expiries. Bars are buttons: clicking one
+ *  filters the table below. Colour reflects urgency, never the only signal. */
+export function ExpiryChart({ months, selected, onSelect }: {
+  months: { month: string; count: number }[]; selected: string | null; onSelect: (m: string | null) => void;
+}) {
+  const max = Math.max(1, ...months.map((m) => m.count));
+  const fmt = (m: string, i: number) => {
+    const d = new Date(`${m}-01T00:00:00Z`);
+    return d.toLocaleDateString(undefined, { month: "short", ...(i === 0 || d.getUTCMonth() === 0 ? { year: "2-digit" } : {}), timeZone: "UTC" });
+  };
+  const tone = (i: number) => (i === 0 ? "bg-fail" : i === 1 ? "bg-warn" : "bg-navy-700");
+  return (
+    <div className="flex h-56 items-end gap-1.5 sm:gap-2.5" role="group" aria-label="Certificates expiring per month">
+      {months.map((m, i) => {
+        const active = selected === m.month;
+        return (
+          <button key={m.month} type="button" onClick={() => onSelect(active ? null : m.month)} aria-pressed={active}
+            aria-label={`${fmt(m.month, i)}: ${m.count} certificate${m.count === 1 ? "" : "s"}`}
+            className={cls("group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5 rounded-md px-0.5 pb-1 pt-2",
+              active ? "bg-subtle ring-2 ring-orange-500" : "hover:bg-subtle")}>
+            <span className="text-xs font-semibold text-heading tabular-nums">{m.count || ""}</span>
+            <span className={cls("w-full max-w-10 rounded-t", m.count ? tone(i) : "bg-line")}
+              style={{ height: m.count ? `${Math.max(8, (m.count / max) * 150)}px` : "3px" }} />
+            <span className={cls("truncate text-[11px] text-muted", i % 2 === 1 && "max-sm:invisible")}>{fmt(m.month, i)}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}

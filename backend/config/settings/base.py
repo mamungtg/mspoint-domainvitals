@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.domains",
     "apps.dns_monitor",
+    "apps.ssl_monitor",
 ]
 
 MIDDLEWARE = [
@@ -161,6 +162,7 @@ CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULE = {
     "dns-scan-due-domains": {"task": "apps.dns_monitor.tasks.schedule_due_scans", "schedule": 15 * 60},
     "recheck-domain-verification": {"task": "apps.dns_monitor.tasks.recheck_verifications", "schedule": 6 * 60 * 60},
+    "tls-scan-due-hosts": {"task": "apps.ssl_monitor.tasks.schedule_due_tls_scans", "schedule": 30 * 60},
 }
 
 # --- DNS monitoring ----------------------------------------------------------

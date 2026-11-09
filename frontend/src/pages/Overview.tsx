@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Legend, ScoreLineChart, Segment, StackedBar } from "../components/charts";
+import { DaysLeft } from "../components/CertTable";
+import { ExpiryChart, Legend, ScoreLineChart, Segment, StackedBar } from "../components/charts";
 import { IconGlobe, IconPlus } from "../components/icons";
 import { Alert, Badge, Button, Card, EmptyState, KpiTile, linkCls, PageHeader, ScoreRing, Spinner, StatusPill } from "../components/ui";
 import { api, canWrite, CHECK_LABEL, CheckName, errorText, Organization, Overview as OverviewData } from "../lib/api";
@@ -99,6 +100,31 @@ export default function Overview() {
           </div>
         </Card>
       </div>
+
+      {data.tls.total > 0 && (
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <Card title="Certificate expiry, next 12 months" className="lg:col-span-2"
+            description={`${data.tls.expired + data.tls.within_7} need renewal now, ${data.tls.within_30} within 30 days`}
+            actions={<Link to="/reports/tls" className={`${linkCls} text-sm`}>All certificates</Link>}>
+            <ExpiryChart months={data.tls.by_month} selected={null} onSelect={() => navigate("/reports/tls")} />
+          </Card>
+          <Card title="Expiring first" padded={false}>
+            <ul className="divide-y divide-line">
+              {data.tls.soonest.map((c) => (
+                <li key={c.id}>
+                  <Link to={`/domains/${c.domain_id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-subtle">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-heading">{c.label}</span>
+                      <span className="block truncate text-xs text-muted">{c.issuer ?? "Unknown issuer"}</span>
+                    </span>
+                    <span className="text-sm"><DaysLeft days={c.days_left} /></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card title="Domains that need attention" padded={false}

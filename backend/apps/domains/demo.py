@@ -125,8 +125,11 @@ def demo_resolver(after_change: bool = True) -> FakeResolver:
 
 @transaction.atomic
 def ensure_demo_workspace(user) -> Organization:
+    from apps.ssl_monitor.demo import seed_demo_tls
+
     existing = Organization.objects.filter(is_demo=True, memberships__user=user).first()
     if existing:
+        seed_demo_tls(existing)
         return existing
     org = Organization.objects.create(name=DEMO_NAME, owner=user, is_demo=True, timezone="UTC")
     # Viewer role: the sample is read-only and can be left at any time.
@@ -147,4 +150,5 @@ def ensure_demo_workspace(user) -> Organization:
             when = timezone.now() - timedelta(days=days_ago)  # same clock time each day: one scan per calendar day
             scan = DnsScan.objects.create(domain=dom, trigger=DnsScan.Trigger.DEMO, created_at=when)
             execute_scan(scan, after if days_ago < CHANGE_DAY else before, when=when)
+    seed_demo_tls(org, force=True)
     return org
