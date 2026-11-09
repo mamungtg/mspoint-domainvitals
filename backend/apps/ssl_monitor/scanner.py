@@ -74,8 +74,21 @@ def resolve_public(hostname: str, port: int) -> str:
     public = [ip for ip in ips if is_public_ip(ip)]
     if not public:
         raise ScanBlocked(f"{hostname} resolves only to non-public addresses")
-    v4 = [ip for ip in public if ":" not in ip]
-    return (v4 or public)[0]
+    return _prefer_ipv4(public)
+
+
+def _prefer_ipv4(ips: list[str]) -> str:
+    v4 = [ip for ip in ips if ":" not in ip]
+    return (v4 or ips)[0]
+
+
+def resolve_any(hostname: str, port: int) -> str:
+    """Tests only: resolve without the public-address check (IPv4 first, like resolve_public)."""
+    try:
+        infos = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise ScanFailed(f"{hostname} does not resolve") from exc
+    return _prefer_ipv4(list(dict.fromkeys(i[4][0] for i in infos)))
 
 
 def _connect(ip: str, port: int, hostname: str, ctx: ssl.SSLContext, timeout: float):
@@ -161,10 +174,7 @@ def scan(
     """Handshake twice: once with full verification (is it trusted?) and once
     without (so we can still read an expired or self-signed certificate)."""
     info = CertInfo(hostname=hostname, port=port)
-    if allow_private:
-        info.ip = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)[0][4][0]
-    else:
-        info.ip = resolve_public(hostname, port)
+    info.ip = resolve_any(hostname, port) if allow_private else resolve_public(hostname, port)
 
     # 1. Verified handshake
     vctx = ssl.create_default_context(cafile=cafile or certifi.where())

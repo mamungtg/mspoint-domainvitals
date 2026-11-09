@@ -187,6 +187,24 @@ def tls_server(tmp_path):
     srv.close()
 
 
+def test_localhost_prefers_ipv4_like_ci_runners(monkeypatch):
+    """GitHub runners resolve localhost to ::1 first; the scanner must still pick IPv4."""
+    real = socket.getaddrinfo
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        lambda h, p, *a, **k: (
+            [
+                (socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::1", p, 0, 0)),
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", p)),
+            ]
+            if h == "localhost"
+            else real(h, p, *a, **k)
+        ),
+    )
+    assert scanner.resolve_any("localhost", 443) == "127.0.0.1"
+
+
 def test_real_handshake_reads_untrusted_certificate(tls_server):
     i = scanner.scan("localhost", tls_server, allow_private=True, timeout=3)
     assert i.self_signed and not i.trusted and i.hostname_match
