@@ -122,6 +122,16 @@ class DomainDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+def _alert_counts(org) -> dict:
+    from apps.alerts.demo import seed_demo_alerts
+    from apps.alerts.models import Alert
+
+    if org.is_demo:
+        seed_demo_alerts(org)
+    qs = Alert.objects.filter(organization=org, status=Alert.Status.OPEN)
+    return {"open": qs.count(), "critical": qs.filter(severity="critical").count()}
+
+
 def _recent_changes(org_id, limit=8):
     from apps.dns_monitor.models import DnsChange
 
@@ -309,6 +319,7 @@ class OverviewView(APIView):
                 "findings": findings[:10],
                 "tls": _tls_summary(m.organization),
                 "recent_changes": _recent_changes(org_id),
+                "alerts": _alert_counts(m.organization),
             }
         )
 

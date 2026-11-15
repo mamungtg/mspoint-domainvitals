@@ -52,6 +52,10 @@ def store_result(scan: SslScan, info: dict | None, result: CheckResult | None, e
             scan.not_after = info.get("not_after") or None
         scan.save()
         MonitoredHost.objects.filter(pk=scan.host_id).update(latest_scan=scan)
+        if scan.trigger != "demo" and not scan.host.domain.organization.is_demo:
+            from apps.alerts.tasks import process_tls
+
+            transaction.on_commit(lambda: process_tls.delay(str(scan.pk)))
     return scan
 
 

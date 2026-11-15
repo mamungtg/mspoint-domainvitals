@@ -22,6 +22,7 @@
 | `dns_monitor` | Check engine (SPF, DKIM, DMARC, MX, DNS), resolvers, scans, record inventory, change history, propagation. |
 | `ssl_monitor` | Monitored hosts, TLS handshakes, certificate evaluation, expiry reports. |
 | `dmarc` | Aggregate report ingestion (mailbox and upload), sender identification, DMARC dashboards. |
+| `alerts` | Alerts raised from scans and reports; email, Slack, Teams and webhook delivery. |
 
 ## Scheduled jobs
 
@@ -45,5 +46,6 @@ Each check returns `pass`, `warn`, `fail` or `error` plus findings with a severi
 - Tenant isolation: objects are fetched through the caller's memberships, and a missing membership returns 404 rather than 403 so IDs can't be probed.
 - Viewers and the demo workspace are read-only.
 - Outbound probes (TLS handshakes, authoritative DNS queries) go only to public IP addresses.
+- Outbound webhooks go only to public `https` addresses, without following redirects, and are HMAC-signed.
 - Untrusted files (DMARC reports) are parsed with defusedxml and hard size limits during decompression.
 - Django admin is off in production unless `ENABLE_ADMIN` is set, and lives at a non-default path.
