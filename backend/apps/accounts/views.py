@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -60,13 +60,13 @@ class RegisterView(AnonymousPostView):
         user = User.objects.create_user(
             email=data["email"], password=data["password"], full_name=data.get("full_name", "")
         )
-        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-        record(request, "user.registered", obj=user)
+        # No session yet: the account can sign in once the email address is confirmed.
+        record(request, "user.registered", obj=user, user=user)
         from apps.domains.demo import ensure_demo_workspace
 
         ensure_demo_workspace(user)  # read-only sample data to explore before adding real domains
         transaction.on_commit(lambda: send_verification_email_task.delay(str(user.pk)))
-        return Response(s.UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        return Response({"email": user.email, "verification_required": True}, status=status.HTTP_201_CREATED)
 
 
 class LoginView(AnonymousPostView):
@@ -82,6 +82,12 @@ class LoginView(AnonymousPostView):
             # on errors. Security log line instead (ship to log aggregation).
             security_log.warning("login_failed email=%s ip=%s", ser.validated_data["email"].lower(), client_ip(request))
             raise AuthenticationFailed("Invalid email or password.")
+        if not user.email_verified:
+            # Only reachable with the right password, so it reveals nothing new.
+            raise PermissionDenied(
+                "Confirm your email address before signing in. Check your inbox for the link we sent.",
+                code="email_not_verified",
+            )
         login(request, user)  # rotates the session key
         record(request, "user.logged_in", obj=user, user=user)
         return Response(s.UserSerializer(user).data)
@@ -123,13 +129,20 @@ class VerifyEmailView(AnonymousPostView):
         return Response({"email_verified": True})
 
 
-class ResendVerificationView(APIView):
+class ResendVerificationView(AnonymousPostView):
+    """Send a new confirmation link. Works signed out, because unverified
+    accounts cannot sign in. Same response whether or not the account exists."""
+
     throttle_scope = "verify_email"
 
-    @extend_schema(request=None, responses={202: None}, tags=["auth"])
+    @extend_schema(request=s.EmailOnlySerializer, responses={202: None}, tags=["auth"])
     def post(self, request):
-        user = request.user
-        if not user.email_verified:
+        ser = s.EmailOnlySerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        user = User.objects.filter(
+            email=ser.validated_data["email"].lower(), is_active=True, email_verified=False
+        ).first()
+        if user:
             transaction.on_commit(lambda: send_verification_email_task.delay(str(user.pk)))
         return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -165,6 +178,7 @@ class PasswordResetConfirmView(AnonymousPostView):
             raise ValidationError({"new_password": list(getattr(exc, "messages", [str(exc)]))}) from exc
         user.set_password(ser.validated_data["new_password"])
         user.save(update_fields=["password"])  # invalidates the reset token and other sessions' hash
+        user.mark_email_verified()  # the reset link proves the user controls the inbox
         record(request, "user.password_reset", obj=user, user=user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

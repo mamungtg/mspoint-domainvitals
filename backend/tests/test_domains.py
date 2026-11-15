@@ -138,8 +138,9 @@ def test_register_creates_demo_workspace(client_for):
     c = csrf_client()
     r = c.post("/api/v1/auth/register/", {"email": "n@x.com", "password": "Correct-Horse-Battery-9"}, format="json")
     assert r.status_code == 201
-    c.credentials(HTTP_X_CSRFTOKEN=c.cookies["dv_csrftoken"].value)
-    orgs = c.get("/api/v1/organizations/").data
+    from apps.accounts.models import User
+
+    orgs = client_for(User.objects.get(email="n@x.com")).get("/api/v1/organizations/").data
     assert [o["is_demo"] for o in orgs] == [True]
 
 

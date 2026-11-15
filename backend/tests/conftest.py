@@ -7,6 +7,15 @@ from apps.organizations.models import Membership, Organization, Role
 PASSWORD = "Correct-Horse-Battery-9"
 
 
+@pytest.fixture(autouse=True)
+def _fresh_cache():
+    """Rate-limit counters live in the cache; each test starts from zero."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+
+
 @pytest.fixture
 def make_user(db):
     def _make(email="user@example.com", verified=True, **kw):
