@@ -9,3 +9,4 @@ gunicorn==23.0.0
 dnspython==2.7.0
 cryptography==44.0.0
 certifi==2024.12.14
+defusedxml==0.7.1

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import CheckCard from "../components/CheckCard";
 import DnsRecords from "../components/DnsRecords";
+import DomainDmarc from "../components/DomainDmarc";
 import TlsHosts from "../components/TlsHosts";
 import { ScoreLineChart } from "../components/charts";
 import { IconRefresh } from "../components/icons";
@@ -16,7 +17,7 @@ import { useWorkspace } from "../lib/workspace";
 
 const CHECKS: CheckName[] = ["dmarc", "spf", "dkim", "mx", "dns"];
 const TRIGGER: Record<string, string> = { manual: "Manual", schedule: "Scheduled", verification: "After verification", demo: "Sample" };
-type Tab = "results" | "records" | "tls" | "history" | "settings";
+type Tab = "results" | "records" | "dmarc" | "tls" | "history" | "settings";
 
 function Verification({ domain, writable, onVerified }: { domain: Domain; writable: boolean; onVerified: (d: Domain) => void }) {
   const [busy, setBusy] = useState(false);
@@ -164,7 +165,7 @@ export default function DomainDetail() {
   const { data: scan } = useApi<ScanDetail>(latestId ? `/scans/${latestId}/` : null);
   const [params] = useSearchParams();
   const initial = params.get("tab");
-  const [tab, setTab] = useState<Tab>(initial === "records" || initial === "tls" || initial === "history" || initial === "settings" ? initial : "results");
+  const [tab, setTab] = useState<Tab>(initial === "records" || initial === "dmarc" || initial === "tls" || initial === "history" || initial === "settings" ? initial : "results");
   const [scanMsg, setScanMsg] = useState("");
   const [scanning, setScanning] = useState(false);
   const writable = canWrite(current);
@@ -206,7 +207,7 @@ export default function DomainDetail() {
           : <Verification domain={domain} writable={writable} onVerified={(d) => setDomain(d)} />
       ) : (
         <>
-          <Tabs value={tab} onChange={setTab} items={[{ id: "results", label: "Health" }, { id: "records", label: "DNS records" }, { id: "tls", label: "SSL/TLS" }, { id: "history", label: "History" }, { id: "settings", label: "Settings" }]} />
+          <Tabs value={tab} onChange={setTab} items={[{ id: "results", label: "Health" }, { id: "records", label: "DNS records" }, { id: "dmarc", label: "DMARC reports" }, { id: "tls", label: "SSL/TLS" }, { id: "history", label: "History" }, { id: "settings", label: "Settings" }]} />
           <div className="mt-6">
             {tab === "results" && (!ls || !scan ? (
               <Card><Spinner label={pending ? "Running the first scan…" : "Loading results…"} /></Card>
@@ -234,6 +235,7 @@ export default function DomainDetail() {
                 </div>
               </>
             ))}
+            {tab === "dmarc" && <DomainDmarc domainId={domain.id} writable={writable} />}
             {tab === "records" && <DnsRecords domainId={domain.id} domainName={domain.name} />}
             {tab === "tls" && <TlsHosts domain={domain} writable={writable} />}
             {tab === "history" && <History domainId={domain.id} />}

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.domains",
     "apps.dns_monitor",
     "apps.ssl_monitor",
+    "apps.dmarc",
 ]
 
 MIDDLEWARE = [
@@ -163,6 +164,8 @@ CELERY_BEAT_SCHEDULE = {
     "dns-scan-due-domains": {"task": "apps.dns_monitor.tasks.schedule_due_scans", "schedule": 15 * 60},
     "recheck-domain-verification": {"task": "apps.dns_monitor.tasks.recheck_verifications", "schedule": 6 * 60 * 60},
     "tls-scan-due-hosts": {"task": "apps.ssl_monitor.tasks.schedule_due_tls_scans", "schedule": 30 * 60},
+    "dmarc-poll-mailbox": {"task": "apps.dmarc.tasks.poll_dmarc_mailbox", "schedule": 10 * 60},
+    "dmarc-prune-old-reports": {"task": "apps.dmarc.tasks.prune_old_reports", "schedule": 24 * 60 * 60},
 }
 
 # --- DNS monitoring ----------------------------------------------------------
@@ -171,6 +174,17 @@ DNS_SCAN_INTERVAL_HOURS = env.int("DNS_SCAN_INTERVAL_HOURS", 24)
 DNS_MANUAL_SCAN_COOLDOWN_SECONDS = env.int("DNS_MANUAL_SCAN_COOLDOWN_SECONDS", 60)
 DOMAIN_LIMIT_PER_ORG = env.int("DOMAIN_LIMIT_PER_ORG", 100)
 VERIFICATION_GRACE_HOURS = env.int("VERIFICATION_GRACE_HOURS", 72)
+
+# --- DMARC reports -----------------------------------------------------------
+# Customers add this address to the rua= tag of their DMARC record. Because it is
+# on another domain, mspointit.com must publish *._report._dmarc TXT "v=DMARC1".
+DMARC_RUA_ADDRESS = env("DMARC_RUA_ADDRESS", default="dmarc@mspointit.com")
+DMARC_IMAP_HOST = env("DMARC_IMAP_HOST", default="")
+DMARC_IMAP_PORT = env.int("DMARC_IMAP_PORT", 993)
+DMARC_IMAP_USER = env("DMARC_IMAP_USER", default="")
+DMARC_IMAP_PASSWORD = env("DMARC_IMAP_PASSWORD", default="")
+DMARC_IMAP_FOLDER = env("DMARC_IMAP_FOLDER", default="INBOX")
+DMARC_RETENTION_DAYS = env.int("DMARC_RETENTION_DAYS", 400)
 
 # --- Email -------------------------------------------------------------------
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")

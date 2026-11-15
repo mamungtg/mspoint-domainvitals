@@ -19,7 +19,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
     { to: "/alerts", label: "Alerts", icon: IconBell, soon: true },
   ] },
   { title: "Reports", items: [
-    { to: "/reports/dmarc", label: "DMARC reports", icon: IconFile, soon: true },
+    { to: "/reports/dmarc", label: "DMARC reports", icon: IconFile },
     { to: "/reports/tls", label: "SSL/TLS certificates", icon: IconLock },
   ] },
   { title: "Tools", items: [{ to: "/tools/checker", label: "Domain checker", icon: IconSearch }] },
