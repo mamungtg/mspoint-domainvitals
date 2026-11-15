@@ -19,22 +19,59 @@ def csrf_client():
     return c
 
 
-def test_register_logs_in_and_sends_verification(django_capture_on_commit_callbacks):
+def test_register_requires_confirmation_before_sign_in(django_capture_on_commit_callbacks):
     c = csrf_client()
     with django_capture_on_commit_callbacks(execute=True):
         r = c.post("/api/v1/auth/register/", {"email": "New@Example.com", "password": PASSWORD}, format="json")
     assert r.status_code == 201, r.data
-    assert r.data["email"] == "new@example.com"
-    assert r.data["email_verified"] is False
-    assert c.get("/api/v1/auth/me/").status_code == 200
+    assert r.data == {"email": "new@example.com", "verification_required": True}
+    assert c.get("/api/v1/auth/me/").status_code == 403  # no session after sign-up
     assert len(mail.outbox) == 1
-    token = re.search(r"token=(\S+)", mail.outbox[0].body).group(1)
+    msg = mail.outbox[0]
+    assert msg.alternatives and "text/html" in msg.alternatives[0][1]
+    token = re.search(r"token=(\S+)", msg.body).group(1)
 
-    # login() rotates the CSRF token; a SPA re-reads the cookie before each write.
-    c.credentials(HTTP_X_CSRFTOKEN=c.cookies["dv_csrftoken"].value)
+    login = {"email": "new@example.com", "password": PASSWORD}
+    r = c.post("/api/v1/auth/login/", login, format="json")
+    assert r.status_code == 403 and r.data["error"]["code"] == "email_not_verified"
+
     r = c.post("/api/v1/auth/verify-email/", {"token": token}, format="json")
     assert r.status_code == 200
     assert User.objects.get(email="new@example.com").email_verified
+    assert c.post("/api/v1/auth/login/", login, format="json").status_code == 200
+
+
+def test_wrong_password_does_not_reveal_unverified_account(make_user):
+    make_user("u@example.com", verified=False)
+    r = csrf_client().post("/api/v1/auth/login/", {"email": "u@example.com", "password": "wrong"}, format="json")
+    assert r.data["error"]["message"] == "Invalid email or password."
+
+
+def test_resend_verification_signed_out(make_user, django_capture_on_commit_callbacks):
+    make_user("u@example.com", verified=False)
+    make_user("ok@example.com")
+    c = csrf_client()
+    with django_capture_on_commit_callbacks(execute=True):
+        for email in ("u@example.com", "ok@example.com", "nobody@example.com"):
+            assert c.post("/api/v1/auth/verify-email/resend/", {"email": email}, format="json").status_code == 202
+    assert [m.to for m in mail.outbox] == [["u@example.com"]]
+
+
+def test_unverified_session_is_ignored(make_user):
+    u = make_user("u@example.com", verified=False)
+    c = APIClient()
+    c.force_login(u)  # a session opened before verification became mandatory
+    assert c.get("/api/v1/auth/me/").status_code == 403
+    u.mark_email_verified()
+    assert c.get("/api/v1/auth/me/").status_code == 200
+
+
+def test_verify_user_command(make_user):
+    from django.core.management import call_command
+
+    make_user("u@example.com", verified=False)
+    call_command("verify_user", "U@example.com")
+    assert User.objects.get(email="u@example.com").email_verified
 
 
 def test_register_rejects_weak_password_and_duplicates(make_user):
@@ -89,6 +126,21 @@ def test_password_reset_flow_no_enumeration(make_user, django_capture_on_commit_
     r = c.post("/api/v1/auth/password-reset/confirm/", {"uid": uid, "token": token, "new_password": new}, format="json")
     assert r.status_code == 400
     assert User.objects.get(email="a@example.com").check_password(new)
+
+
+def test_password_reset_confirms_email(make_user, django_capture_on_commit_callbacks):
+    make_user("a@example.com", verified=False)
+    c = csrf_client()
+    with django_capture_on_commit_callbacks(execute=True):
+        c.post("/api/v1/auth/password-reset/", {"email": "a@example.com"}, format="json")
+    uid = re.search(r"uid=([^&\s]+)", mail.outbox[0].body).group(1)
+    token = re.search(r"token=(\S+)", mail.outbox[0].body).group(1)
+    r = c.post(
+        "/api/v1/auth/password-reset/confirm/",
+        {"uid": uid, "token": token, "new_password": "Another-Strong-Pass-42"},
+        format="json",
+    )
+    assert r.status_code == 204 and User.objects.get(email="a@example.com").email_verified
 
 
 def test_me_requires_auth():

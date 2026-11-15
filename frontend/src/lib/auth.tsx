@@ -6,7 +6,7 @@ type AuthState = {
   loading: boolean;
   refresh: () => Promise<User | null>;
   login: (email: string, password: string) => Promise<User>;
-  register: (email: string, password: string, fullName: string) => Promise<User>;
+  register: (email: string, password: string, fullName: string) => Promise<{ email: string; verification_required: boolean }>;
   logout: () => Promise<void>;
   setUser: (u: User | null) => void;
 };
@@ -38,11 +38,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
     return u;
   };
-  const register = async (email: string, password: string, full_name: string) => {
-    const u = await api<User>("/auth/register/", { method: "POST", json: { email, password, full_name } });
-    setUser(u);
-    return u;
-  };
+  // Sign-up does not sign in: the account must confirm its email address first.
+  const register = (email: string, password: string, full_name: string) =>
+    api<{ email: string; verification_required: boolean }>("/auth/register/", { method: "POST", json: { email, password, full_name } });
   const logout = async () => {
     try { await api("/auth/logout/", { method: "POST" }); } finally { setUser(null); }
   };

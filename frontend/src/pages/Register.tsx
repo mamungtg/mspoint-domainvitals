@@ -1,15 +1,13 @@
 import { FormEvent, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
-import { safeNext } from "../components/guards";
-import { Alert, Button, Field, Input } from "../components/ui";
-import { linkCls } from "../components/ui";
+import ResendConfirmation, { rememberNext } from "../components/ResendConfirmation";
+import { Alert, Button, Field, Input, linkCls } from "../components/ui";
 import { ApiError, errorText, FieldErrors } from "../lib/api";
 import { useAuth } from "../lib/auth";
 
 export default function Register() {
   const { register } = useAuth();
-  const navigate = useNavigate();
   const [params] = useSearchParams();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,13 +15,15 @@ export default function Register() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true); setError(""); setFieldErrors({});
     try {
-      await register(email, password, fullName);
-      navigate(safeNext(params.get("next"), "/onboarding"), { replace: true });
+      const r = await register(email, password, fullName);
+      rememberNext(params.get("next"));
+      setSentTo(r.email);
     } catch (err) {
       const d = (err as ApiError).details;
       if (d && (d.email || d.password || d.full_name)) setFieldErrors(d);
@@ -31,6 +31,21 @@ export default function Register() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (sentTo) {
+    return (
+      <AuthLayout title="Check your inbox" subtitle="One more step before you can sign in."
+        footer={<>Already confirmed? <Link className={linkCls} to="/login">Sign in</Link></>}>
+        <div className="space-y-5">
+          <p className="text-ink">
+            We sent a confirmation link to <strong className="text-heading">{sentTo}</strong>. Open it to activate your account, then sign in.
+          </p>
+          <p className="text-sm text-muted">The link expires in 48 hours. Nothing arrived after a few minutes? Check your spam folder or send a new link.</p>
+          <ResendConfirmation email={sentTo} />
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (
@@ -48,6 +63,7 @@ export default function Register() {
         </Field>
         {error && <Alert>{error}</Alert>}
         <Button type="submit" busy={busy} className="w-full">Create account</Button>
+        <p className="text-center text-xs text-muted">We'll email you a link to confirm your address before your first sign-in.</p>
       </form>
     </AuthLayout>
   );

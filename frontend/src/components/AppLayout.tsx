@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { api, errorText, Organization, ROLE_LABEL } from "../lib/api";
+import { errorText, Organization, ROLE_LABEL } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { useWorkspace } from "../lib/workspace";
@@ -186,27 +186,6 @@ function ThemeToggle() {
   );
 }
 
-function VerifyBanner() {
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [err, setErr] = useState("");
-  const resend = async () => {
-    setState("sending");
-    try { await api("/auth/verify-email/resend/", { method: "POST" }); setState("sent"); }
-    catch (e) { setErr(errorText(e)); setState("error"); }
-  };
-  return (
-    <div className="border-b border-warn/25 bg-warn-bg px-4 py-2.5 text-sm text-warn sm:px-8">
-      Confirm your email address to add domains, invite teammates and receive alerts.{" "}
-      {state === "sent" ? <strong>Confirmation link sent.</strong> : (
-        <button onClick={resend} disabled={state === "sending"} className="font-semibold underline underline-offset-2">
-          {state === "sending" ? "Sending…" : "Resend confirmation link"}
-        </button>
-      )}
-      {state === "error" && <span className="ml-2 font-medium text-fail">{err}</span>}
-    </div>
-  );
-}
-
 function DemoBanner({ orgs }: { orgs: Organization[] }) {
   const { select } = useWorkspace();
   const real = orgs.find((o) => !o.is_demo);
@@ -223,7 +202,6 @@ function DemoBanner({ orgs }: { orgs: Organization[] }) {
 }
 
 export default function AppLayout() {
-  const { user } = useAuth();
   const { orgs, current } = useWorkspace();
   const [open, setOpen] = useState(false);
   const loc = useLocation();
@@ -248,7 +226,6 @@ export default function AppLayout() {
         <ThemeToggle />
         <UserMenu />
       </header>
-      {user && !user.email_verified && <VerifyBanner />}
       {current?.is_demo && <DemoBanner orgs={orgs} />}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8"><Outlet /></main>
     </div>

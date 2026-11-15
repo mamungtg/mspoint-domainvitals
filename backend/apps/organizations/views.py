@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -10,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.services import record
+from common.mail import send_branded
 
 from . import serializers as s
 from .models import MANAGER_ROLES, ROLE_RANK, Invitation, Membership, Role, hash_token
@@ -112,12 +112,16 @@ class MemberListInviteView(APIView):
 
 def _send_invitation(email, raw_token, org_name, inviter):
     link = f"{settings.FRONTEND_URL}/invite/accept?token={raw_token}"
-    send_mail(
+    send_branded(
+        to=email,
         subject=f"You've been invited to {org_name} on DomainVitals",
-        message=f"{inviter} invited you to join the {org_name} workspace on DomainVitals.\n\n"
-        f"Accept the invitation:\n{link}\n\nThis link expires in {settings.INVITATION_MAX_AGE_DAYS} days.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[email],
+        heading=f"Join {org_name} on DomainVitals",
+        paragraphs=[
+            f"{inviter} invited you to the {org_name} workspace, where your team monitors domain and mail health."
+        ],
+        button=("Accept invitation", link),
+        note=f"This invitation expires in {settings.INVITATION_MAX_AGE_DAYS} days. "
+        "If you were not expecting it, you can ignore this message.",
         fail_silently=True,
     )
 
