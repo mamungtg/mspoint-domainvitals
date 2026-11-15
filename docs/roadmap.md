@@ -15,7 +15,7 @@ Annual billing gives two months free. Extra domains are sold per domain above th
 ## Build order
 
 1. DNS monitoring — done
-2. DMARC aggregate reports (RUA ingestion, sources, alignment)
+2. DMARC aggregate reports — done
 3. Alerts and notifications (email, Slack, Teams, webhooks) driven by findings, certificate expiry and DNS changes
 4. Plans, limits and Stripe billing (MSPoint LLC)
 5. Public no-login tools and PDF / white-label reports

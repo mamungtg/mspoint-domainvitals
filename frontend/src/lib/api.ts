@@ -156,3 +156,33 @@ export const CHECK_LONG: Record<CheckName, string> = {
   dmarc: "Domain-based Message Authentication, Reporting and Conformance", mx: "Mail exchangers",
   dns: "Name servers, SOA, host records and TTLs",
 };
+
+// --- DMARC reports -------------------------------------------------------------
+export type DmarcVerdict = "pass" | "warn" | "fail";
+export type DmarcIp = {
+  ip: string; ptr: string; messages: number; passed: number; spf_aligned: number; dkim_aligned: number;
+  dkim_domains: string[]; header_from: string[];
+};
+export type DmarcSender = {
+  name: string; known: boolean; messages: number; passed: number; spf_aligned: number; dkim_aligned: number;
+  pass_rate: number | null; verdict: DmarcVerdict; ips: DmarcIp[];
+};
+export type DmarcStatus = "receiving" | "waiting" | "not_configured" | "no_dmarc" | "unknown";
+export type DmarcDomainRow = {
+  id: string; name: string; messages: number; passed: number; pass_rate: number | null; last_report: string | null;
+  status: DmarcStatus; policy: string | null; suggested_record: string;
+};
+export type DmarcTotals = {
+  messages: number; passed: number; failed: number; pass_rate: number | null; quarantined: number; rejected: number;
+  senders: number; unauthenticated_senders: number;
+};
+export type DmarcSummary = {
+  days: number; since: string; totals: DmarcTotals; by_day: { day: string; passed: number; failed: number }[];
+  senders: DmarcSender[]; rua_address: string;
+};
+export type DmarcReportRow = {
+  id: string; reporter: string; date_begin: string; date_end: string; messages: number;
+  policy: Record<string, string>; source: "mail" | "upload" | "demo"; received_at: string;
+};
+export type OrgDmarc = DmarcSummary & { domains: DmarcDomainRow[] };
+export type DomainDmarc = ({ verified: true; domain: DmarcDomainRow; reports: DmarcReportRow[] } & DmarcSummary) | { verified: false; rua_address: string };

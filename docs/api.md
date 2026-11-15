@@ -9,6 +9,7 @@ Base path `/api/v1/`. Interactive schema: `/api/v1/docs/` (OpenAPI at `/api/v1/s
 | Domains | `organizations/{id}/domains/` (GET, POST), `domains/{id}/` (GET, PATCH, DELETE), `domains/{id}/verify/`, `domains/{id}/scan/`, `domains/{id}/scans/`, `scans/{id}/`, `organizations/{id}/overview/` |
 | DNS | `domains/{id}/records/`, `domains/{id}/changes/?name=&type=`, `domains/{id}/propagation/?name=&type=` |
 | SSL/TLS | `organizations/{id}/certificates/`, `domains/{id}/tls-hosts/` (GET, POST), `tls-hosts/{id}/` (DELETE), `tls-hosts/{id}/scan/`, `tls-hosts/{id}/scans/` |
+| DMARC | `organizations/{id}/dmarc/?days=` (7, 30 or 90), `domains/{id}/dmarc/?days=`, `domains/{id}/dmarc/upload/` (POST multipart `file`) |
 | Public tools | `tools/check/` (POST `{domain, check, selector}`; `check` is `all`, `spf`, `dkim`, `dmarc`, `mx` or `dns`), `tools/propagation/` (POST `{name, type}`) |
 
 `PATCH domains/{id}/` accepts `monitoring_enabled`, `dkim_selectors` and `dns_watch_names`.

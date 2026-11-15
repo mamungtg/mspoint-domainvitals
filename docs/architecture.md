@@ -21,6 +21,7 @@
 | `domains` | Domains, ownership verification by TXT record, overview dashboard, public checker, demo workspace. |
 | `dns_monitor` | Check engine (SPF, DKIM, DMARC, MX, DNS), resolvers, scans, record inventory, change history, propagation. |
 | `ssl_monitor` | Monitored hosts, TLS handshakes, certificate evaluation, expiry reports. |
+| `dmarc` | Aggregate report ingestion (mailbox and upload), sender identification, DMARC dashboards. |
 
 ## Scheduled jobs
 
@@ -29,6 +30,8 @@
 | `dns_monitor.schedule_due_scans` | 15 min | Queues a scan for each monitored, verified domain whose last scan is about a day old. |
 | `dns_monitor.recheck_verifications` | 6 h | Confirms the verification TXT is still published; monitoring stops after three days without it. |
 | `ssl_monitor.schedule_due_tls_scans` | 30 min | Queues TLS scans that are due. |
+| `dmarc.poll_dmarc_mailbox` | 10 min | Reads new DMARC reports from the reporting mailbox. |
+| `dmarc.prune_old_reports` | 24 h | Deletes reports past the retention period. |
 
 ## Scoring
 
@@ -41,4 +44,5 @@ Each check returns `pass`, `warn`, `fail` or `error` plus findings with a severi
 - Tenant isolation: objects are fetched through the caller's memberships, and a missing membership returns 404 rather than 403 so IDs can't be probed.
 - Viewers and the demo workspace are read-only.
 - Outbound probes (TLS handshakes, authoritative DNS queries) go only to public IP addresses.
+- Untrusted files (DMARC reports) are parsed with defusedxml and hard size limits during decompression.
 - Django admin is off in production unless `ENABLE_ADMIN` is set, and lives at a non-default path.

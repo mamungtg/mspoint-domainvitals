@@ -8,6 +8,7 @@ import { WorkspaceProvider } from "./lib/workspace";
 import AcceptInvite from "./pages/AcceptInvite";
 import Checker from "./pages/Checker";
 import Certificates from "./pages/Certificates";
+import DmarcReports from "./pages/DmarcReports";
 import ComingSoon from "./pages/ComingSoon";
 import DomainDetail from "./pages/DomainDetail";
 import Domains from "./pages/Domains";
@@ -52,8 +53,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/tools/checker" element={<Checker />} />
                   <Route path="/alerts" element={<ComingSoon title="Alerts" description="Problems that need someone to act."
                     what={["A new failing check or a DNS record that changed", "Certificates close to expiry", "Mail and in-app notifications, with who acknowledged them"]} />} />
-                  <Route path="/reports/dmarc" element={<ComingSoon title="DMARC reports" description="Who sends mail as your domains, and whether it passes."
-                    what={["Aggregate reports from Google, Microsoft, Yahoo and others", "Sending sources with SPF and DKIM alignment", "Pass rate trends per domain"]} />} />
+                  <Route path="/reports/dmarc" element={<DmarcReports />} />
                   <Route path="/reports/tls" element={<Certificates />} />
                   <Route path="/settings/billing" element={<ComingSoon title="Plan and billing" description="Your plan, usage and invoices."
                     what={["Plans by number of domains", "Card payments and invoices through Stripe", "Self-service upgrades and cancellation"]} />} />
