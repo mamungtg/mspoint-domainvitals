@@ -66,10 +66,9 @@ class OrgDomainsView(APIView):
             raise PermissionDenied("Confirm your email address before adding domains.")
         ser = s.AddDomainSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        if Domain.objects.filter(organization_id=org_id).count() >= settings.DOMAIN_LIMIT_PER_ORG:
-            raise ValidationError(
-                {"name": [f"This workspace already has the maximum of {settings.DOMAIN_LIMIT_PER_ORG} domains."]}
-            )
+        from apps.billing.limits import check_domains
+
+        check_domains(m.organization)
         try:
             with transaction.atomic():
                 domain = Domain.objects.create(

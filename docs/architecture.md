@@ -23,6 +23,7 @@
 | `ssl_monitor` | Monitored hosts, TLS handshakes, certificate evaluation, expiry reports. |
 | `dmarc` | Aggregate report ingestion (mailbox and upload), sender identification, DMARC dashboards. |
 | `alerts` | Alerts raised from scans and reports; email, Slack, Teams and webhook delivery. |
+| `billing` | Plans and limits, 14-day trial, Stripe Checkout, Customer Portal and webhooks. |
 
 ## Scheduled jobs
 

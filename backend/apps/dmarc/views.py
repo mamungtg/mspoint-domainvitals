@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.services import record
+from apps.billing.limits import check_dmarc_days
 from apps.domains.views import _domain_for, _require_write
 from apps.organizations.permissions import get_membership_or_404
 
@@ -35,6 +36,7 @@ class OrgDmarcView(APIView):
         if m.organization.is_demo:
             seed_demo_dmarc()
         days = _days(request)
+        check_dmarc_days(m.organization, days)
         domains = list(
             m.organization.domains.filter(verified_at__isnull=False).select_related("latest_scan").order_by("name")
         )
@@ -50,6 +52,7 @@ class DomainDmarcView(APIView):
         if m.organization.is_demo:
             seed_demo_dmarc()
         days = _days(request)
+        check_dmarc_days(m.organization, days)
         if not domain.is_verified:
             return Response({"verified": False, "rua_address": rua_address()})
         data = summarize([domain.name], days)

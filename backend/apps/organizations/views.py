@@ -91,6 +91,9 @@ class MemberListInviteView(APIView):
             raise PermissionDenied("You cannot invite someone with a higher role than your own.")
         if Membership.objects.filter(organization_id=org_id, user__email=email).exists():
             raise ValidationError({"email": ["This person is already a member."]})
+        from apps.billing.limits import check_members
+
+        check_members(actor.organization)
         try:
             with transaction.atomic():
                 inv, raw = Invitation.issue(

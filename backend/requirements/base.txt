@@ -10,3 +10,4 @@ dnspython==2.7.0
 cryptography==44.0.0
 certifi==2024.12.14
 defusedxml==0.7.1
+stripe==11.6.0

@@ -8,9 +8,9 @@ import { WorkspaceProvider } from "./lib/workspace";
 import AcceptInvite from "./pages/AcceptInvite";
 import Checker from "./pages/Checker";
 import Alerts from "./pages/Alerts";
+import Billing from "./pages/Billing";
 import Certificates from "./pages/Certificates";
 import DmarcReports from "./pages/DmarcReports";
-import ComingSoon from "./pages/ComingSoon";
 import DomainDetail from "./pages/DomainDetail";
 import Domains from "./pages/Domains";
 import Overview from "./pages/Overview";
@@ -55,8 +55,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/alerts" element={<Alerts />} />
                   <Route path="/reports/dmarc" element={<DmarcReports />} />
                   <Route path="/reports/tls" element={<Certificates />} />
-                  <Route path="/settings/billing" element={<ComingSoon title="Plan and billing" description="Your plan, usage and invoices."
-                    what={["Plans by number of domains", "Card payments and invoices through Stripe", "Self-service upgrades and cancellation"]} />} />
+                  <Route path="/settings/billing" element={<Billing />} />
                   <Route path="/settings/members" element={<Members />} />
                   <Route path="/settings/workspace" element={<WorkspaceSettings />} />
                   <Route path="/settings" element={<Navigate to="/settings/workspace" replace />} />

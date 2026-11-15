@@ -74,6 +74,7 @@ export type User = { id: string; email: string; full_name: string; email_verifie
 export type Role = "owner" | "admin" | "member" | "viewer";
 export type Organization = {
   id: string; name: string; slug: string; timezone: string; status: string; is_demo: boolean; role: Role | null; created_at: string;
+  billing: { plan: PlanKey; status: BillingStatus; trial_ends_at: string | null } | null;
 };
 export type Membership = { id: string; role: Role; created_at: string; user: { id: string; email: string; full_name: string } };
 export type Invitation = {
@@ -205,3 +206,20 @@ export type AlertChannel = {
 export const ALERT_KIND_LABEL: Record<AlertKind, string> = {
   check: "Failing checks", certificate: "Certificates", dns_change: "DNS changes", dmarc_sender: "New DMARC senders",
 };
+
+// --- Billing ----------------------------------------------------------------------
+export type PlanKey = "free" | "starter" | "agency" | "msp" | "enterprise";
+export type BillingStatus = "free" | "trialing" | "active" | "past_due" | "canceled";
+export type PlanInfo = {
+  key: PlanKey; name: string; price: { month: number; year: number } | null; domains: number; members: number | null;
+  channels: ChannelType[]; dmarc_days: number; summary: string;
+};
+export type Billing =
+  | { demo: true; plans: PlanInfo[] }
+  | {
+      demo: false; plan: PlanKey; subscribed_plan: PlanKey; status: BillingStatus; interval: "" | "month" | "year";
+      trial_ends_at: string | null; trial_active: boolean; current_period_end: string | null; cancel_at_period_end: boolean;
+      has_customer: boolean; limits: { domains: number; members: number | null; channels: ChannelType[]; dmarc_days: number };
+      usage: { domains: number; members: number; pending_invitations: number; unmonitored_domains: number };
+      can_manage: boolean; online_payments: boolean; plans: PlanInfo[];
+    };

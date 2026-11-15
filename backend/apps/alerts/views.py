@@ -90,6 +90,9 @@ class ChannelsView(APIView):
             raise ValidationError({"detail": [f"A workspace can have up to {MAX_CHANNELS} channels."]})
         ser = ChannelSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
+        from apps.billing.limits import check_channel
+
+        check_channel(m.organization, ser.validated_data["type"])
         ch = ser.save(organization=m.organization, created_by=request.user)
         record(
             request,
