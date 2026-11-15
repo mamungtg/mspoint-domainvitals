@@ -4,7 +4,7 @@ import { DaysLeft } from "../components/CertTable";
 import { ChangeDiff } from "../components/DnsRecords";
 import { ExpiryChart, Legend, ScoreLineChart, Segment, StackedBar } from "../components/charts";
 import { IconGlobe, IconPlus } from "../components/icons";
-import { Alert, Badge, Button, Card, EmptyState, KpiTile, linkCls, PageHeader, ScoreRing, Spinner, StatusPill, timeAgo } from "../components/ui";
+import { Alert, Badge, Button, Card, cls, EmptyState, KpiTile, linkCls, PageHeader, ScoreRing, Spinner, StatusIcon, StatusPill, timeAgo } from "../components/ui";
 import { api, canWrite, CHECK_LABEL, CheckName, errorText, Organization, Overview as OverviewData } from "../lib/api";
 import { useApi } from "../lib/useApi";
 import { useWorkspace } from "../lib/workspace";
@@ -65,6 +65,16 @@ export default function Overview() {
   return (
     <>
       {header}
+      {data.alerts.open > 0 && (
+        <Link to="/alerts" className={cls("mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-5 py-3 text-sm hover:bg-subtle",
+          data.alerts.critical ? "border-fail/40 bg-fail-bg" : "border-warn/40 bg-warn-bg")}>
+          <StatusIcon status={data.alerts.critical ? "fail" : "warn"} size={18} />
+          <span className="font-semibold text-heading">
+            {data.alerts.open} open alert{data.alerts.open === 1 ? "" : "s"}{data.alerts.critical > 0 && `, ${data.alerts.critical} critical`}
+          </span>
+          <span className="ml-auto font-medium text-link">View alerts →</span>
+        </Link>
+      )}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="col-span-2 flex items-center gap-4 rounded-lg border border-line bg-surface px-5 py-4 lg:col-span-1">
           <ScoreRing score={data.health.average_score} size={72} label="Average health score" />

@@ -16,7 +16,11 @@ log = logging.getLogger(__name__)
 def poll_dmarc_mailbox():
     result = poll_mailbox()
     if result.reports:
-        identify_sources.delay([str(r.pk) for r in result.reports])
+        from apps.alerts.tasks import process_dmarc
+
+        ids = [str(r.pk) for r in result.reports]
+        identify_sources.delay(ids)
+        process_dmarc.delay(ids)
 
 
 @shared_task(soft_time_limit=280, time_limit=300)

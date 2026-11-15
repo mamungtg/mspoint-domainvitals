@@ -170,7 +170,16 @@ def ensure_demo_workspace(user) -> Organization:
     existing = Organization.objects.filter(is_demo=True, memberships__user=user).first()
     if existing:
         # Workspaces created before record tracking existed get fresh history.
-        if DnsScan.objects.filter(domain__organization=existing, status=DnsScan.Status.COMPLETED, records={}).exists():
+        # Re-seed when the sample predates record tracking or has gone stale,
+        # so the trend and "last checked" always end today.
+        latest = DnsScan.objects.filter(domain__organization=existing).order_by("-created_at").first()
+        stale = latest is None or latest.created_at.date() < timezone.now().date()
+        if (
+            stale
+            or DnsScan.objects.filter(
+                domain__organization=existing, status=DnsScan.Status.COMPLETED, records={}
+            ).exists()
+        ):
             DnsScan.objects.filter(domain__organization=existing).delete()
             _seed_history(existing)
         seed_demo_tls(existing)

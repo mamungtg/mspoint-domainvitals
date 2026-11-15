@@ -16,7 +16,7 @@ Annual billing gives two months free. Extra domains are sold per domain above th
 
 1. DNS monitoring — done
 2. DMARC aggregate reports — done
-3. Alerts and notifications (email, Slack, Teams, webhooks) driven by findings, certificate expiry and DNS changes
+3. Alerts and notifications — done
 4. Plans, limits and Stripe billing (MSPoint LLC)
 5. Public no-login tools and PDF / white-label reports
 6. Security review, documentation and launch

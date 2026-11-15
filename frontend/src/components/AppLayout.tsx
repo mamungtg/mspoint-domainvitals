@@ -16,7 +16,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
   { title: "Monitoring", items: [
     { to: "/dashboard", label: "Overview", icon: IconHome },
     { to: "/domains", label: "Domains", icon: IconGlobe },
-    { to: "/alerts", label: "Alerts", icon: IconBell, soon: true },
+    { to: "/alerts", label: "Alerts", icon: IconBell },
   ] },
   { title: "Reports", items: [
     { to: "/reports/dmarc", label: "DMARC reports", icon: IconFile },

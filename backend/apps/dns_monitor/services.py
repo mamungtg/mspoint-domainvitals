@@ -89,4 +89,8 @@ def execute_scan(scan: DnsScan, resolver: BaseResolver | None = None, when=None)
     if latest is None or latest.created_at <= scan.created_at:
         type(domain).objects.filter(pk=domain.pk).update(latest_scan=scan)
         domain.latest_scan = scan
+    if not domain.organization.is_demo:
+        from apps.alerts.tasks import process_scan
+
+        transaction.on_commit(lambda: process_scan.delay(str(scan.pk)))
     return scan

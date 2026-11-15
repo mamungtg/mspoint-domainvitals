@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.dns_monitor",
     "apps.ssl_monitor",
     "apps.dmarc",
+    "apps.alerts",
 ]
 
 MIDDLEWARE = [

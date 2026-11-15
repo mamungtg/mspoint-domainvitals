@@ -117,6 +117,7 @@ export type Overview = {
   findings: OverviewFinding[];
   tls: CertSummary & { soonest: CertRow[] };
   recent_changes: (DnsChange & { domain_id: string; domain: string })[];
+  alerts: { open: number; critical: number };
 };
 
 export type DnsRecordRow = { name: string; type: string; ttl: number | null; values: string[]; last_changed: string | null; tracked_since: string | null };
@@ -186,3 +187,21 @@ export type DmarcReportRow = {
 };
 export type OrgDmarc = DmarcSummary & { domains: DmarcDomainRow[] };
 export type DomainDmarc = ({ verified: true; domain: DmarcDomainRow; reports: DmarcReportRow[] } & DmarcSummary) | { verified: false; rua_address: string };
+
+// --- Alerts ---------------------------------------------------------------------
+export type AlertKind = "check" | "certificate" | "dns_change" | "dmarc_sender";
+export type AlertSeverity = "critical" | "warning" | "info";
+export type AlertItem = {
+  id: string; kind: AlertKind; severity: AlertSeverity; status: "open" | "resolved" | "notice"; title: string; detail: string;
+  domain: string | null; domain_name: string | null; opened_at: string; updated_at: string; resolved_at: string | null;
+  acknowledged_by: string | null; acknowledged_at: string | null;
+};
+export type AlertList = { counts: { open: number; critical: number; unacknowledged: number }; alerts: AlertItem[] };
+export type ChannelType = "email" | "slack" | "teams" | "webhook";
+export type AlertChannel = {
+  id: string; type: ChannelType; name: string; enabled: boolean; url: string; notify_managers: boolean; recipients: string[];
+  events: AlertKind[]; min_severity: "critical" | "warning"; secret: string | null; last_sent_at: string | null; last_error: string; created_at: string;
+};
+export const ALERT_KIND_LABEL: Record<AlertKind, string> = {
+  check: "Failing checks", certificate: "Certificates", dns_change: "DNS changes", dmarc_sender: "New DMARC senders",
+};

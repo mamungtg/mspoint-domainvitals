@@ -92,7 +92,10 @@ class DmarcUploadView(APIView):
         if result.errors and not result.stored and not result.duplicates:
             raise ValidationError({"file": result.errors[:1]})
         if result.reports:
+            from apps.alerts.tasks import process_dmarc
+
             identify_sources.delay([str(r.pk) for r in result.reports])
+            process_dmarc.delay([str(r.pk) for r in result.reports])
             record(
                 request,
                 "dmarc.report_uploaded",

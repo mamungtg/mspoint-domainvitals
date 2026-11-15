@@ -8,6 +8,7 @@ DomainVitals by MSPoint monitors the health of the domains a business sends emai
 | [modules/dns-monitoring.md](modules/dns-monitoring.md) | DNS checks, record inventory, change detection, propagation |
 | [modules/dmarc-reports.md](modules/dmarc-reports.md) | Report ingestion, parsing limits, sender identification |
 | [modules/ssl-monitoring.md](modules/ssl-monitoring.md) | Certificate scanning and evaluation |
+| [modules/alerts.md](modules/alerts.md) | Alert lifecycle, channels, webhook signing |
 | [api.md](api.md) | REST endpoints (full schema at `/api/v1/docs/`) |
 | [operations.md](operations.md) | Deploying, rolling back, everyday server tasks |
 | [roadmap.md](roadmap.md) | Plans, pricing and what is built next |
