@@ -36,8 +36,15 @@ def schedule_due_scans(limit: int = 500):
         .filter(Q(latest_scan__isnull=True) | Q(latest_scan__created_at__lt=cutoff))
         .select_related("organization")[:limit]
     )
+    from apps.billing.limits import monitored_domain_ids
+
+    allowed: dict = {}  # organization id -> domains covered by its plan
     queued = 0
     for d in due:
+        if d.organization_id not in allowed:
+            allowed[d.organization_id] = monitored_domain_ids(d.organization)
+        if d.pk not in allowed[d.organization_id]:
+            continue  # over the plan's domain limit: kept, not scanned
         if active_scan(d) is None:
             queue_scan(d, DnsScan.Trigger.SCHEDULE)
             queued += 1

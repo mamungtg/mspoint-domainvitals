@@ -7,15 +7,31 @@ from .models import Invitation, Membership, Organization, Role
 
 class OrganizationSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
+    billing = serializers.SerializerMethodField()
 
     class Meta:
         model = Organization
-        fields = ["id", "name", "slug", "timezone", "status", "is_demo", "role", "created_at"]
-        read_only_fields = ["id", "slug", "status", "is_demo", "role", "created_at"]
+        fields = ["id", "name", "slug", "timezone", "status", "is_demo", "role", "billing", "created_at"]
+        read_only_fields = ["id", "slug", "status", "is_demo", "role", "billing", "created_at"]
 
     def get_role(self, obj):
         roles = self.context.get("roles") or {}
         return roles.get(obj.pk)
+
+    def get_billing(self, obj):
+        """Just enough for plan badges and trial/payment banners."""
+        if obj.is_demo or obj.pk is None:
+            return None
+        from apps.billing.models import BillingAccount
+
+        acc = BillingAccount.objects.filter(organization=obj).first()
+        if acc is None:
+            return None
+        return {
+            "plan": acc.effective_plan,
+            "status": acc.status,
+            "trial_ends_at": acc.trial_ends_at.isoformat() if acc.trial_active else None,
+        }
 
 
 class MemberUserSerializer(serializers.Serializer):

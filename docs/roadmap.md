@@ -10,13 +10,13 @@
 | MSP | $199 | 100 | Managed service providers, hosting companies |
 | Enterprise | Custom | Custom | SSO, SLA, invoicing |
 
-Annual billing gives two months free. Extra domains are sold per domain above the plan limit. Professional services: domain audit ($99), DMARC enforcement project ($299–499 per domain), managed monitoring.
+Annual billing gives two months free. Extra domains above a plan limit: move up a plan, or Enterprise (per-domain add-ons are planned). Professional services: domain audit ($99), DMARC enforcement project ($299–499 per domain), managed monitoring.
 
 ## Build order
 
 1. DNS monitoring — done
 2. DMARC aggregate reports — done
 3. Alerts and notifications — done
-4. Plans, limits and Stripe billing (MSPoint LLC)
+4. Plans, limits and Stripe billing — done
 5. Public no-login tools and PDF / white-label reports
 6. Security review, documentation and launch

@@ -17,6 +17,8 @@
 | Restart a service | `./dc restart worker` |
 | Send a test email | `./dc exec backend python manage.py sendtestemail you@example.com` |
 | Confirm a user by hand (support) | `./dc exec backend python manage.py verify_user user@example.com` |
+| Stripe products, prices and portal | `./dc exec backend python manage.py stripe_setup` |
+| Give a workspace a plan by hand | `./dc exec backend python manage.py set_plan "<workspace>" enterprise` |
 | Set a user's password | `./dc exec backend python manage.py changepassword user@example.com` |
 
 `dc` loads `.env` and `.deploy.env` (image prefix and current tag) so manual compose commands use the deployed images.

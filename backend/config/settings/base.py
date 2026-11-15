@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.ssl_monitor",
     "apps.dmarc",
     "apps.alerts",
+    "apps.billing",
 ]
 
 MIDDLEWARE = [
@@ -186,6 +187,12 @@ DMARC_IMAP_USER = env("DMARC_IMAP_USER", default="")
 DMARC_IMAP_PASSWORD = env("DMARC_IMAP_PASSWORD", default="")
 DMARC_IMAP_FOLDER = env("DMARC_IMAP_FOLDER", default="INBOX")
 DMARC_RETENTION_DAYS = env.int("DMARC_RETENTION_DAYS", 400)
+
+# --- Billing (Stripe) ----------------------------------------------------------
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
+STRIPE_AUTOMATIC_TAX = env.bool("STRIPE_AUTOMATIC_TAX", False)
+BILLING_TRIAL_DAYS = env.int("BILLING_TRIAL_DAYS", 14)
 
 # --- Email -------------------------------------------------------------------
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")

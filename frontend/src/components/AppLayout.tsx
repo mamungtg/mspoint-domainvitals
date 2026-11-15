@@ -26,7 +26,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
   { title: "Workspace", items: [
     { to: "/settings/members", label: "Members", icon: IconUsers },
     { to: "/settings/workspace", label: "Settings", icon: IconSettings },
-    { to: "/settings/billing", label: "Plan and billing", icon: IconCard, soon: true },
+    { to: "/settings/billing", label: "Plan and billing", icon: IconCard },
   ] },
 ];
 
@@ -186,6 +186,23 @@ function ThemeToggle() {
   );
 }
 
+function BillingBanner({ org }: { org: Organization }) {
+  const b = org.billing;
+  if (!b || (org.role !== "owner" && org.role !== "admin")) return null;
+  const days = b.trial_ends_at ? Math.max(0, Math.ceil((new Date(b.trial_ends_at).getTime() - Date.now()) / 86400000)) : null;
+  let text = "";
+  let tone = "border-orange-500/30 bg-orange-500/10";
+  if (b.status === "past_due") { text = "The last payment failed. Update the card to keep monitoring without interruption."; tone = "border-fail/30 bg-fail-bg"; }
+  else if (days !== null && days <= 7) text = `Your free trial of the Agency plan ends ${days === 0 ? "today" : `in ${days} day${days === 1 ? "" : "s"}`}. Choose a plan to keep all your domains monitored.`;
+  if (!text) return null;
+  return (
+    <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2.5 text-sm text-heading sm:px-8 ${tone}`}>
+      <span>{text}</span>
+      <Link to="/settings/billing" className="font-semibold text-link underline underline-offset-2">{b.status === "past_due" ? "Update payment" : "See plans"}</Link>
+    </div>
+  );
+}
+
 function DemoBanner({ orgs }: { orgs: Organization[] }) {
   const { select } = useWorkspace();
   const real = orgs.find((o) => !o.is_demo);
@@ -227,6 +244,7 @@ export default function AppLayout() {
         <UserMenu />
       </header>
       {current?.is_demo && <DemoBanner orgs={orgs} />}
+      {current && !current.is_demo && <BillingBanner org={current} />}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8"><Outlet /></main>
     </div>
   );
