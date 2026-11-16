@@ -18,5 +18,5 @@ Annual billing gives two months free. Extra domains above a plan limit: move up 
 2. DMARC aggregate reports — done
 3. Alerts and notifications — done
 4. Plans, limits and Stripe billing — done
-5. Public no-login tools and PDF / white-label reports
+5. Public no-login tools and PDF / white-label reports — done
 6. Security review, documentation and launch

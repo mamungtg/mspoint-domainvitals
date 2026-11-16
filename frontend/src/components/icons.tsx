@@ -19,4 +19,6 @@ export const IconMoon = () => <svg {...base}><path d="M19.5 14.5A8 8 0 0 1 9.5 4
 export const IconChevron = () => <svg {...base}><path d="m9 6 6 6-6 6" /></svg>;
 export const IconPlus = () => <svg {...base}><path d="M12 5v14M5 12h14" /></svg>;
 export const IconTrash = () => <svg {...base}><path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l.8 12.5h9.4L17.5 7" /><path d="M10 11v5M14 11v5" /></svg>;
+export const IconDownload = () => <svg {...base}><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5" /><path d="M5 19.5h14" /></svg>;
+export const IconReport = () => <svg {...base}><path d="M6 3.5h8l4 4v13H6Z" /><path d="M14 3.5v4h4M9 13h6M9 16.5h6M9 9.5h2" /></svg>;
 export const IconRefresh = () => <svg {...base}><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4.5V11h-6.5" /></svg>;

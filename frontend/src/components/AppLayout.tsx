@@ -5,7 +5,7 @@ import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { useWorkspace } from "../lib/workspace";
 import {
-  IconBell, IconCard, IconClose, IconFile, IconGlobe, IconHome, IconLock, IconLogout, IconMenu, IconMoon, IconSearch,
+  IconBell, IconCard, IconClose, IconFile, IconReport, IconGlobe, IconHome, IconLock, IconLogout, IconMenu, IconMoon, IconSearch,
   IconChevron, IconPlus, IconSettings, IconSun, IconUsers,
 } from "./icons";
 import { Logo } from "./Logo";
@@ -21,6 +21,7 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
   { title: "Reports", items: [
     { to: "/reports/dmarc", label: "DMARC reports", icon: IconFile },
     { to: "/reports/tls", label: "SSL/TLS certificates", icon: IconLock },
+    { to: "/reports/client", label: "Client reports", icon: IconReport },
   ] },
   { title: "Tools", items: [{ to: "/tools/checker", label: "Domain checker", icon: IconSearch }] },
   { title: "Workspace", items: [

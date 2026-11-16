@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "apps.dmarc",
     "apps.alerts",
     "apps.billing",
+    "apps.reports",
 ]
 
 MIDDLEWARE = [
@@ -140,6 +141,7 @@ REST_FRAMEWORK = {
         "tools": env("THROTTLE_TOOLS", default="30/hour"),
         "public_tools": env("THROTTLE_PUBLIC_TOOLS", default="20/hour"),
         "public_ssl": env("THROTTLE_PUBLIC_SSL", default="10/hour"),
+        "reports": env("THROTTLE_REPORTS", default="30/hour"),
         "domain_write": env("THROTTLE_DOMAIN_WRITE", default="60/hour"),
     },
 }
@@ -172,6 +174,7 @@ CELERY_BEAT_SCHEDULE = {
     "recheck-domain-verification": {"task": "apps.dns_monitor.tasks.recheck_verifications", "schedule": 6 * 60 * 60},
     "tls-scan-due-hosts": {"task": "apps.ssl_monitor.tasks.schedule_due_tls_scans", "schedule": 30 * 60},
     "dmarc-poll-mailbox": {"task": "apps.dmarc.tasks.poll_dmarc_mailbox", "schedule": 10 * 60},
+    "reports-monthly": {"task": "apps.reports.tasks.send_monthly_reports", "schedule": 6 * 60 * 60},
     "dmarc-prune-old-reports": {"task": "apps.dmarc.tasks.prune_old_reports", "schedule": 24 * 60 * 60},
 }
 

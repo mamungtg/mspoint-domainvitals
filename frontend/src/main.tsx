@@ -10,6 +10,7 @@ import Checker from "./pages/Checker";
 import Alerts from "./pages/Alerts";
 import Billing from "./pages/Billing";
 import Certificates from "./pages/Certificates";
+import ClientReports from "./pages/ClientReports";
 import DmarcReports from "./pages/DmarcReports";
 import DomainDetail from "./pages/DomainDetail";
 import Domains from "./pages/Domains";
@@ -59,6 +60,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/alerts" element={<Alerts />} />
                   <Route path="/reports/dmarc" element={<DmarcReports />} />
                   <Route path="/reports/tls" element={<Certificates />} />
+                  <Route path="/reports/client" element={<ClientReports />} />
                   <Route path="/settings/billing" element={<Billing />} />
                   <Route path="/settings/members" element={<Members />} />
                   <Route path="/settings/workspace" element={<WorkspaceSettings />} />

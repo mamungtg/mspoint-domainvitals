@@ -6,7 +6,7 @@ import DomainDmarc from "../components/DomainDmarc";
 import { RemoveDomainCard } from "../components/RemoveDomain";
 import TlsHosts from "../components/TlsHosts";
 import { ScoreLineChart } from "../components/charts";
-import { IconRefresh } from "../components/icons";
+import { IconDownload, IconRefresh } from "../components/icons";
 import {
   Alert, Badge, Button, Card, CopyField, Field, Input, linkCls, PageHeader, ScoreBar, ScoreRing, Spinner, StatusIcon, StatusPill,
   Tabs, timeAgo,
@@ -187,8 +187,15 @@ export default function DomainDetail() {
               <span>{pending ? "Scan in progress…" : `Last checked ${timeAgo(ls?.completed_at)}`}</span>
               {!domain.monitoring_enabled && <Badge>Monitoring paused</Badge>}</span>
           : "Waiting for ownership verification"}
-        actions={domain.is_verified && writable &&
-          <Button variant="secondary" onClick={scanNow} busy={scanning || !!pending}><IconRefresh />{pending ? "Scanning" : "Scan now"}</Button>}
+        actions={domain.is_verified && (
+          <div className="flex flex-wrap gap-2">
+            <a href={`/api/v1/organizations/${current?.id}/reports/pdf/?domain=${domain.id}`} download
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-4 text-sm font-medium text-heading hover:bg-subtle">
+              <IconDownload />PDF report
+            </a>
+            {writable && <Button variant="secondary" onClick={scanNow} busy={scanning || !!pending}><IconRefresh />{pending ? "Scanning" : "Scan now"}</Button>}
+          </div>
+        )}
       />
       {scanMsg && <div className="mb-4"><Alert>{scanMsg}</Alert></div>}
 

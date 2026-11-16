@@ -11,6 +11,7 @@ DomainVitals by MSPoint monitors the health of the domains a business sends emai
 | [modules/alerts.md](modules/alerts.md) | Alert lifecycle, channels, webhook signing |
 | [modules/billing.md](modules/billing.md) | Plans, limits, Stripe Checkout, portal and webhooks |
 | [modules/public-tools.md](modules/public-tools.md) | Free no-login tools, rate limits, SEO prerendering |
+| [modules/reports.md](modules/reports.md) | PDF reports, white-label branding, monthly mail |
 | [api.md](api.md) | REST endpoints (full schema at `/api/v1/docs/`) |
 | [operations.md](operations.md) | Deploying, rolling back, everyday server tasks |
 | [roadmap.md](roadmap.md) | Plans, pricing and what is built next |

@@ -53,7 +53,14 @@ def _text(heading: str, paragraphs: list[str], button: tuple[str, str] | None, n
 
 
 def send_branded(
-    to: str, subject: str, heading: str, paragraphs: list[str], button=None, note: str = "", fail_silently=False
+    to: str,
+    subject: str,
+    heading: str,
+    paragraphs: list[str],
+    button=None,
+    note: str = "",
+    fail_silently=False,
+    attachments: list[tuple[str, bytes, str]] | None = None,
 ):
     msg = EmailMultiAlternatives(
         subject=subject,
@@ -62,4 +69,6 @@ def send_branded(
         to=[to],
     )
     msg.attach_alternative(_html(heading, paragraphs, button, note), "text/html")
+    for name, content, mimetype in attachments or []:
+        msg.attach(name, content, mimetype)
     msg.send(fail_silently=fail_silently)

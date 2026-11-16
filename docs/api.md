@@ -12,6 +12,7 @@ Base path `/api/v1/`. Interactive schema: `/api/v1/docs/` (OpenAPI at `/api/v1/s
 | DMARC | `organizations/{id}/dmarc/?days=` (7, 30 or 90), `domains/{id}/dmarc/?days=`, `domains/{id}/dmarc/upload/` (POST multipart `file`) |
 | Alerts | `organizations/{id}/alerts/?status=`, `alerts/{id}/acknowledge/`, `organizations/{id}/alert-channels/`, `alert-channels/{id}/`, `alert-channels/{id}/test/` |
 | Billing | `organizations/{id}/billing/`, `organizations/{id}/billing/checkout/` (owner), `organizations/{id}/billing/portal/` (owner), `billing/stripe/webhook/` (Stripe only, signed) |
+| Reports | `organizations/{id}/reports/pdf/?domain=&days=`, `organizations/{id}/reports/branding/`, `organizations/{id}/reports/branding/logo/`, `organizations/{id}/reports/schedule/` |
 | Public tools (no login; anonymous: CSRF + per-IP limits) | `tools/ssl/` (POST `{hostname, port}`), `tools/check/` (POST `{domain, check, selector}`; `check` is `all`, `spf`, `dkim`, `dmarc`, `mx` or `dns`), `tools/propagation/` (POST `{name, type}`) |
 
 `PATCH domains/{id}/` accepts `monitoring_enabled`, `dkim_selectors` and `dns_watch_names`.
