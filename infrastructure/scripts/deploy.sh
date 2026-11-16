@@ -22,7 +22,9 @@ log() { printf '[deploy %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 [[ -f "$APP_DIR/certs/origin.pem" && -f "$APP_DIR/certs/origin.key" ]] || { log "missing origin certificate in $APP_DIR/certs"; exit 1; }
 
 install -m 0644 "$REPO_DIR/docker-compose.prod.yml" "$APP_DIR/docker-compose.yml"
-install -m 0755 "$REPO_DIR/infrastructure/scripts/dc" "$APP_DIR/dc"
+for f in dc backup.sh restore-test.sh restore.sh; do
+  install -m 0755 "$REPO_DIR/infrastructure/scripts/$f" "$APP_DIR/$f"
+done
 cd "$APP_DIR"
 
 PREV_TAG="$(cat .current_tag 2>/dev/null || true)"

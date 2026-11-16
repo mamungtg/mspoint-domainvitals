@@ -3,10 +3,11 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from common.views import health
+from common.views import health, health_deep
 
 api_v1 = [
     path("health/", health, name="health"),
+    path("health/deep/", health_deep, name="health-deep"),
     path("auth/", include("apps.accounts.urls")),
     path("", include("apps.domains.urls")),
     path("", include("apps.ssl_monitor.urls")),

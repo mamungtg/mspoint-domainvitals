@@ -152,6 +152,13 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # The schema maps every internal endpoint; only staff may read it unless a
+    # public API is launched (API_DOCS_PUBLIC=true).
+    "SERVE_PERMISSIONS": (
+        ["rest_framework.permissions.AllowAny"]
+        if env.bool("API_DOCS_PUBLIC", False)
+        else ["rest_framework.permissions.IsAdminUser"]
+    ),
 }
 
 # --- Cache / Redis / Celery --------------------------------------------------
@@ -169,7 +176,9 @@ CELERY_TASK_TIME_LIMIT = 120
 CELERY_TASK_SOFT_TIME_LIMIT = 90
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TIMEZONE = "UTC"
+CELERY_IMPORTS = ("common.tasks",)
 CELERY_BEAT_SCHEDULE = {
+    "health-heartbeat": {"task": "common.tasks.heartbeat", "schedule": 5 * 60},
     "dns-scan-due-domains": {"task": "apps.dns_monitor.tasks.schedule_due_scans", "schedule": 15 * 60},
     "recheck-domain-verification": {"task": "apps.dns_monitor.tasks.recheck_verifications", "schedule": 6 * 60 * 60},
     "tls-scan-due-hosts": {"task": "apps.ssl_monitor.tasks.schedule_due_tls_scans", "schedule": 30 * 60},
@@ -233,3 +242,21 @@ LOGGING = {
 }
 
 ENABLE_ADMIN = env.bool("ENABLE_ADMIN", False)
+
+# --- Monitoring ----------------------------------------------------------------
+# Error tracking is optional: set SENTRY_DSN to send unhandled errors to Sentry.
+SENTRY_DSN = env("SENTRY_DSN", default="")
+SENTRY_ENVIRONMENT = env("SENTRY_ENVIRONMENT", default="production")
+SENTRY_TRACES_SAMPLE_RATE = env.float("SENTRY_TRACES_SAMPLE_RATE", 0.0)
+# Without Sentry, unhandled 500 errors are emailed to these addresses (comma separated).
+ADMINS = [("DomainVitals ops", a) for a in env.list("ERROR_EMAILS", default=[])]
+SERVER_EMAIL = env("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+if ADMINS and not SENTRY_DSN:
+    LOGGING["handlers"]["mail_admins"] = {
+        "class": "django.utils.log.AdminEmailHandler",
+        "level": "ERROR",
+        "filters": ["request_id"],
+    }
+    LOGGING["loggers"] = {
+        "django.request": {"handlers": ["console", "mail_admins"], "level": "ERROR", "propagate": False}
+    }

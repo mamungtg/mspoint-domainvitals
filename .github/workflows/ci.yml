@@ -5,6 +5,8 @@ on:
   push:
     branches-ignore: [main]   # main is tested inside deploy.yml
   workflow_call:
+  schedule:
+    - cron: "17 3 * * 1"      # weekly: catch newly published vulnerabilities
 
 permissions:
   contents: read
@@ -46,3 +48,47 @@ jobs:
         with: { node-version: "22", cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci --no-audit --no-fund
       - run: npm run build
+
+  scripts:
+    name: Backup scripts
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: ci }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck -S warning infrastructure/scripts/*.sh infrastructure/scripts/dc
+      - name: Install PostgreSQL 16 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -q && sudo apt-get install -yq postgresql-client-16
+          echo /usr/lib/postgresql/16/bin >> "$GITHUB_PATH"
+      - name: Backup, restore test and restore
+        env: { PGHOST: 127.0.0.1, PGUSER: postgres, PGPASSWORD: ci }
+        run: infrastructure/scripts/test-backups.sh
+
+  security:
+    name: Dependency vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - name: Python packages (pip-audit)
+        run: |
+          pip install pip-audit==2.10.1
+          pip-audit -r backend/requirements/base.txt --progress-spinner off
+      - name: npm packages (high and critical)
+        working-directory: frontend
+        # Moderate react-router advisories need v7; the affected paths are
+        # mitigated (no SSR; next= redirects are sanitised in safeNext).
+        run: npm audit --omit=dev --audit-level=high

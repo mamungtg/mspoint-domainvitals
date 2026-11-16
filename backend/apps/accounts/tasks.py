@@ -25,3 +25,15 @@ def send_password_reset_email_task(self, user_id):
             send_password_reset_email(user)
         except Exception as exc:
             raise self.retry(exc=exc) from exc
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def send_account_exists_email_task(self, user_id):
+    from .emails import send_account_exists_email
+
+    user = User.objects.filter(pk=user_id, is_active=True).first()
+    if user:
+        try:
+            send_account_exists_email(user)
+        except Exception as exc:
+            raise self.retry(exc=exc) from exc

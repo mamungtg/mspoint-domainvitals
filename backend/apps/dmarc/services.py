@@ -194,6 +194,10 @@ def poll_mailbox(connect=None) -> IngestResult:
                 log.debug("dmarc: IMAP logout failed", exc_info=True)
     finally:
         cache.delete("dmarc:poll-lock")
+    if connect is None:
+        from common.health import mark
+
+        mark("dmarc_mailbox")
     log.info(
         "dmarc: stored=%s duplicates=%s unknown=%s invalid=%s",
         total.stored,

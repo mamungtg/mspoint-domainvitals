@@ -28,8 +28,17 @@ export function GuestOnly() {
   return <Outlet />;
 }
 
-/** Only allow relative in-app redirects (no open redirect via ?next=). */
+/** Only same-site paths are allowed after sign-in. Rejects protocol-relative
+ *  ("//x", "/\\x"), backslashes, control characters and anything with a scheme,
+ *  which browsers or the router could turn into an external redirect. */
 export function safeNext(next: string | null, fallback = "/dashboard"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
-  return next;
+  if (!next || next.length > 512) return fallback;
+  if (!next.startsWith("/") || next.startsWith("//") || next.includes("\\") || /[\u0000-\u001f\u007f]/.test(next)) return fallback;
+  try {
+    const u = new URL(next, "https://app.invalid");
+    if (u.origin !== "https://app.invalid") return fallback;
+    return u.pathname + u.search + u.hash;
+  } catch {
+    return fallback;
+  }
 }
