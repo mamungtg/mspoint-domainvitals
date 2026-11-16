@@ -81,9 +81,52 @@ def test_register_rejects_weak_password_and_duplicates(make_user):
         c.post("/api/v1/auth/register/", {"email": "a@example.com", "password": "123"}, format="json").status_code
         == 400
     )
-    r = c.post("/api/v1/auth/register/", {"email": "TAKEN@example.com", "password": PASSWORD}, format="json")
-    assert r.status_code == 400
+    r = c.post("/api/v1/auth/register/", {"email": "a@example.com", "password": "123"}, format="json")
     assert r.data["error"]["code"] == "validation_error"
+
+
+def test_register_does_not_reveal_existing_accounts(make_user, django_capture_on_commit_callbacks):
+    make_user("taken@example.com")
+    make_user("pending@example.com", verified=False)
+    c = csrf_client()
+    with django_capture_on_commit_callbacks(execute=True):
+        new = c.post("/api/v1/auth/register/", {"email": "fresh@example.com", "password": PASSWORD}, format="json")
+        taken = c.post("/api/v1/auth/register/", {"email": "TAKEN@example.com", "password": PASSWORD}, format="json")
+        pending = c.post(
+            "/api/v1/auth/register/", {"email": "pending@example.com", "password": PASSWORD}, format="json"
+        )
+    assert new.status_code == taken.status_code == pending.status_code == 201
+    assert set(taken.data) == set(new.data) and taken.data["verification_required"] is True
+    subjects = {m.to[0]: m.subject for m in mail.outbox}
+    assert subjects["taken@example.com"] == "You already have a DomainVitals account"
+    assert "Confirm" in subjects["pending@example.com"] and "Confirm" in subjects["fresh@example.com"]
+    assert User.objects.get(email="taken@example.com").check_password(PASSWORD)  # untouched
+
+
+def test_account_lockout_after_repeated_failures(make_user, monkeypatch):
+    from rest_framework.throttling import ScopedRateThrottle
+
+    monkeypatch.setattr(ScopedRateThrottle, "THROTTLE_RATES", dict(ScopedRateThrottle.THROTTLE_RATES, login="1000/min"))
+    make_user("a@example.com")
+    c = csrf_client()
+    for i in range(10):
+        ip = f"198.51.100.{i}"  # spread over many addresses
+        r = c.post(
+            "/api/v1/auth/login/",
+            {"email": "a@example.com", "password": "wrong"},
+            format="json",
+            HTTP_X_FORWARDED_FOR=ip,
+        )
+        assert r.status_code in (401, 403)
+    r = c.post("/api/v1/auth/login/", {"email": "a@example.com", "password": PASSWORD}, format="json")
+    assert r.status_code == 429 and "Too many failed attempts" in r.data["error"]["message"]
+    from apps.accounts.lockout import clear_failed_logins
+
+    clear_failed_logins("a@example.com")
+    assert (
+        c.post("/api/v1/auth/login/", {"email": "a@example.com", "password": PASSWORD}, format="json").status_code
+        == 200
+    )
 
 
 def test_login_requires_csrf(make_user):

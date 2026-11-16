@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, ValidationError
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied, Throttled, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,8 +15,9 @@ from apps.audit.services import client_ip, record
 from common.authentication import enforce_csrf
 
 from . import serializers as s
+from .lockout import account_locked, clear_failed_logins, note_failed_login
 from .models import User
-from .tasks import send_password_reset_email_task, send_verification_email_task
+from .tasks import send_account_exists_email_task, send_password_reset_email_task, send_verification_email_task
 from .tokens import read_email_verification_token, read_password_reset_params
 
 security_log = logging.getLogger("domainvitals.security")
@@ -54,9 +55,16 @@ class RegisterView(AnonymousPostView):
         ser = s.RegisterSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
-        if User.objects.filter(email=data["email"]).exists():
-            # Do not reveal more than necessary; a clear message is still needed for UX.
-            raise ValidationError({"email": ["An account with this email already exists."]})
+        existing = User.objects.filter(email=data["email"]).first()
+        if existing is not None:
+            # Same answer as a new sign-up so the form can't be used to find out who
+            # has an account. The owner of the address gets a mail explaining it.
+            if existing.is_active and not existing.email_verified:
+                transaction.on_commit(lambda: send_verification_email_task.delay(str(existing.pk)))
+            elif existing.is_active:
+                transaction.on_commit(lambda: send_account_exists_email_task.delay(str(existing.pk)))
+            security_log.info("register_existing email=%s ip=%s", data["email"], client_ip(request))
+            return Response({"email": data["email"], "verification_required": True}, status=status.HTTP_201_CREATED)
         user = User.objects.create_user(
             email=data["email"], password=data["password"], full_name=data.get("full_name", "")
         )
@@ -76,8 +84,15 @@ class LoginView(AnonymousPostView):
     def post(self, request):
         ser = s.LoginSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
+        email = ser.validated_data["email"].lower()
+        if account_locked(email):
+            security_log.warning("login_locked email=%s ip=%s", email, client_ip(request))
+            raise Throttled(
+                detail="Too many failed attempts for this account. Try again in 15 minutes or reset your password."
+            )
         user = authenticate(request, username=ser.validated_data["email"], password=ser.validated_data["password"])
         if user is None or not user.is_active:
+            note_failed_login(email)
             # Not written to the audit table: DRF rolls back the request transaction
             # on errors. Security log line instead (ship to log aggregation).
             security_log.warning("login_failed email=%s ip=%s", ser.validated_data["email"].lower(), client_ip(request))
@@ -88,6 +103,7 @@ class LoginView(AnonymousPostView):
                 "Confirm your email address before signing in. Check your inbox for the link we sent.",
                 code="email_not_verified",
             )
+        clear_failed_logins(email)
         login(request, user)  # rotates the session key
         record(request, "user.logged_in", obj=user, user=user)
         return Response(s.UserSerializer(user).data)
@@ -179,6 +195,7 @@ class PasswordResetConfirmView(AnonymousPostView):
         user.set_password(ser.validated_data["new_password"])
         user.save(update_fields=["password"])  # invalidates the reset token and other sessions' hash
         user.mark_email_verified()  # the reset link proves the user controls the inbox
+        clear_failed_logins(user.email)
         record(request, "user.password_reset", obj=user, user=user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

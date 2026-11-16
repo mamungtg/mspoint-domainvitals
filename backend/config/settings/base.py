@@ -152,6 +152,13 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # The schema maps every internal endpoint; only staff may read it unless a
+    # public API is launched (API_DOCS_PUBLIC=true).
+    "SERVE_PERMISSIONS": (
+        ["rest_framework.permissions.AllowAny"]
+        if env.bool("API_DOCS_PUBLIC", False)
+        else ["rest_framework.permissions.IsAdminUser"]
+    ),
 }
 
 # --- Cache / Redis / Celery --------------------------------------------------

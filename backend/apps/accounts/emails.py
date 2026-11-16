@@ -39,3 +39,18 @@ def send_password_reset_email(user):
         note=f"This link expires in {_hours(settings.PASSWORD_RESET_TIMEOUT)} and works once. "
         "If you did not ask for this, ignore this message; your password stays the same.",
     )
+
+
+def send_account_exists_email(user):
+    send_branded(
+        to=user.email,
+        subject="You already have a DomainVitals account",
+        heading="You already have an account",
+        paragraphs=[
+            "Someone, probably you, tried to create a DomainVitals account with this address. "
+            "An account already exists, so nothing was changed.",
+            "Sign in with your password, or reset it if you've forgotten it.",
+        ],
+        button=("Sign in", f"{settings.FRONTEND_URL}/login"),
+        note="If this wasn't you, you can ignore this message; your account is safe.",
+    )

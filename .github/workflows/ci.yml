@@ -5,6 +5,8 @@ on:
   push:
     branches-ignore: [main]   # main is tested inside deploy.yml
   workflow_call:
+  schedule:
+    - cron: "17 3 * * 1"      # weekly: catch newly published vulnerabilities
 
 permissions:
   contents: read
@@ -46,3 +48,22 @@ jobs:
         with: { node-version: "22", cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci --no-audit --no-fund
       - run: npm run build
+
+  security:
+    name: Dependency vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - name: Python packages (pip-audit)
+        run: |
+          pip install pip-audit==2.10.1
+          pip-audit -r backend/requirements/base.txt --progress-spinner off
+      - name: npm packages (high and critical)
+        working-directory: frontend
+        # Moderate react-router advisories need v7; the affected paths are
+        # mitigated (no SSR; next= redirects are sanitised in safeNext).
+        run: npm audit --omit=dev --audit-level=high

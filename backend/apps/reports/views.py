@@ -99,9 +99,6 @@ class LogoView(APIView):
     parser_classes = [MultiPartParser]
     throttle_scope = "domain_write"
 
-    def get_parsers(self):
-        return [] if self.request.method in ("GET", "DELETE") else super().get_parsers()
-
     @extend_schema(responses={(200, "image/png"): bytes}, tags=["reports"])
     def get(self, request, org_id):
         m = get_membership_or_404(request.user, org_id)
