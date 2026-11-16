@@ -38,6 +38,7 @@ export default function Home() {
         <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
           <Link to="/" aria-label="DomainVitals home"><Logo inverse /></Link>
           <nav className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+            <Link to="/tools" className="hidden rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/10 sm:inline-block">Free tools</Link>
             {user ? (
               <Link to="/dashboard" className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-navy-950 hover:bg-orange-600">Open dashboard</Link>
             ) : (

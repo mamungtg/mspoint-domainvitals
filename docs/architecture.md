@@ -43,6 +43,7 @@ Each check returns `pass`, `warn`, `fail` or `error` plus findings with a severi
 
 - Session cookies (`HttpOnly`, `Secure`, `SameSite=Lax`) with CSRF required on every unsafe request, including anonymous ones.
 - Accounts must confirm their email address before they can sign in. Sign-up does not open a session, login answers `email_not_verified` (only after a correct password), and sessions of unconfirmed users are ignored (`common.authentication.VerifiedSessionAuthentication`). A completed password reset also confirms the address.
+- The client IP comes from `CF-Connecting-IP` via nginx (trusted only from the Docker network, i.e. the tunnel) and is passed as a single `X-Forwarded-For` hop (`NUM_PROXIES = 1`).
 - Rate limits per scope (login, register, password reset, tools, domain writes) stored in Redis.
 - Tenant isolation: objects are fetched through the caller's memberships, and a missing membership returns 404 rather than 403 so IDs can't be probed.
 - Viewers and the demo workspace are read-only.

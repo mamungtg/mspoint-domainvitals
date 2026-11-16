@@ -5,7 +5,7 @@ from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied, Throttled, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,9 +13,12 @@ from rest_framework.views import APIView
 from apps.audit.services import record
 from apps.domains.views import _domain_for, _require_write
 from apps.organizations.permissions import get_membership_or_404
+from common.public import PublicToolView
 
+from . import scanner
 from . import serializers as s
 from .demo import seed_demo_tls
+from .evaluate import days_left, evaluate
 from .models import MonitoredHost
 from .reports import certificate_rows, summarize
 from .services import active_scan, in_scope, queue
@@ -129,3 +132,48 @@ class HostScansView(APIView):
     def get(self, request, host_id):
         host, _ = _host_for(request.user, host_id)
         return Response(s.HostScanSerializer(host.scans.all()[:20], many=True).data)
+
+
+class PublicSslSerializer(serializers.Serializer):
+    hostname = serializers.CharField(max_length=253)
+    port = serializers.ChoiceField(choices=[443, 8443], default=443)
+
+    def validate_hostname(self, value):
+        from apps.domains.validation import InvalidDomain, normalize_domain
+
+        try:
+            return normalize_domain(value)
+        except InvalidDomain as e:
+            raise serializers.ValidationError(str(e)) from None
+
+
+class PublicSslView(PublicToolView):
+    """Free SSL/TLS certificate check for any public host (nothing is stored).
+    Only public addresses are contacted (same SSRF guard as monitoring)."""
+
+    public_scope = "public_ssl"
+
+    @extend_schema(request=PublicSslSerializer, responses={200: dict}, tags=["tools"])
+    def post(self, request):
+        ser = PublicSslSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        host, port = ser.validated_data["hostname"], ser.validated_data["port"]
+        try:
+            info = scanner.scan(host, port).to_dict()
+        except scanner.ScanBlocked:
+            raise ValidationError(
+                {"hostname": ["This name points to a private address, so it can't be checked."]}
+            ) from None
+        except scanner.ScanFailed as e:
+            raise ValidationError({"hostname": [str(e)]}) from None
+        now = timezone.now()
+        result = evaluate(info, now)
+        return Response(
+            {
+                "hostname": host,
+                "port": port,
+                "certificate": info,
+                "days_left": days_left(info.get("not_after", ""), now),
+                "result": result.to_dict(),
+            }
+        )

@@ -24,6 +24,7 @@ from apps.dns_monitor.services import active_scan, queue_scan, resolver_for
 from apps.organizations.models import MANAGER_ROLES, Role
 from apps.organizations.permissions import get_membership_or_404
 from apps.organizations.serializers import OrganizationSerializer
+from common.public import PublicToolView
 
 from . import serializers as s
 from .demo import ensure_demo_workspace
@@ -323,10 +324,9 @@ class OverviewView(APIView):
         )
 
 
-class ToolCheckView(APIView):
-    """Instant lookup for any domain (public DNS only; nothing is stored)."""
-
-    throttle_scope = "tools"
+class ToolCheckView(PublicToolView):
+    """Instant lookup for any domain (public DNS only; nothing is stored).
+    Used by the in-app checker and the free public tools."""
 
     @extend_schema(request=s.ToolCheckSerializer, responses={200: dict}, tags=["tools"])
     def post(self, request):
