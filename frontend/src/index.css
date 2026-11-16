@@ -59,6 +59,18 @@
   --dv-fail: #ff8a80; --dv-fail-bg: #3d1614;
 }
 
+/* The semantic colours are resolved where they are declared. Re-declare them on
+   every themed region so a light area inside a dark page (the public pages
+   while the app is in dark mode) gets light-theme values, not inherited ones. */
+[data-theme] {
+  --color-ink: var(--dv-ink); --color-heading: var(--dv-heading); --color-muted: var(--dv-muted);
+  --color-line: var(--dv-line); --color-canvas: var(--dv-canvas); --color-surface: var(--dv-surface);
+  --color-subtle: var(--dv-subtle); --color-link: var(--dv-link); --color-accent: var(--dv-accent);
+  --color-pass: var(--dv-pass); --color-pass-bg: var(--dv-pass-bg); --color-warn: var(--dv-warn);
+  --color-warn-bg: var(--dv-warn-bg); --color-fail: var(--dv-fail); --color-fail-bg: var(--dv-fail-bg);
+  color: var(--color-ink);
+}
+
 @layer base {
   html { -webkit-font-smoothing: antialiased; }
   body { background: var(--color-canvas); color: var(--color-ink); font-size: 15px; line-height: 1.55; }
