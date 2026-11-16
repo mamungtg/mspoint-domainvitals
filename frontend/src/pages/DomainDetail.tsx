@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import CheckCard from "../components/CheckCard";
 import DnsRecords from "../components/DnsRecords";
 import DomainDmarc from "../components/DomainDmarc";
+import { RemoveDomainCard } from "../components/RemoveDomain";
 import TlsHosts from "../components/TlsHosts";
 import { ScoreLineChart } from "../components/charts";
 import { IconRefresh } from "../components/icons";
@@ -107,11 +108,6 @@ function Settings({ domain, writable, manager, onChange }: { domain: Domain; wri
     try { onChange(await api<Domain>(`/domains/${domain.id}/`, { method: "PATCH", json: body })); setMsg({ tone: "success", text: ok }); }
     catch (e) { setMsg({ tone: "error", text: errorText(e) }); } finally { setBusy(""); }
   };
-  const remove = async () => {
-    if (!window.confirm(`Remove ${domain.name}? Its scan history will be deleted.`)) return;
-    try { await api(`/domains/${domain.id}/`, { method: "DELETE" }); navigate("/domains", { replace: true }); }
-    catch (e) { setMsg({ tone: "error", text: errorText(e) }); }
-  };
   return (
     <div className="space-y-6">
       {msg && <Alert tone={msg.tone}>{msg.text}</Alert>}
@@ -145,14 +141,7 @@ function Settings({ domain, writable, manager, onChange }: { domain: Domain; wri
           <CopyField label={`TXT at ${domain.verification.host}`} value={domain.verification.value} />
         </Card>
       )}
-      {manager && (
-        <Card title="Remove domain">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">Stops monitoring and deletes this domain's scan history.</p>
-            <Button variant="danger" onClick={remove}>Remove {domain.name}</Button>
-          </div>
-        </Card>
-      )}
+      {manager && <RemoveDomainCard domain={domain} onRemoved={() => navigate("/domains", { replace: true })} />}
     </div>
   );
 }
@@ -168,6 +157,7 @@ export default function DomainDetail() {
   const [tab, setTab] = useState<Tab>(initial === "records" || initial === "dmarc" || initial === "tls" || initial === "history" || initial === "settings" ? initial : "results");
   const [scanMsg, setScanMsg] = useState("");
   const [scanning, setScanning] = useState(false);
+  const navigate = useNavigate();
   const writable = canWrite(current);
   const pending = domain?.latest_scan && ["queued", "running"].includes(domain.latest_scan.status);
 
@@ -204,7 +194,12 @@ export default function DomainDetail() {
 
       {!domain.is_verified ? (
         current?.is_demo ? <Alert tone="info">In a real workspace you would publish a TXT record here to prove you control {domain.name}.</Alert>
-          : <Verification domain={domain} writable={writable} onVerified={(d) => setDomain(d)} />
+          : (
+            <div className="space-y-6">
+              <Verification domain={domain} writable={writable} onVerified={(d) => setDomain(d)} />
+              {isManager(current?.role) && <RemoveDomainCard domain={domain} onRemoved={() => navigate("/domains", { replace: true })} />}
+            </div>
+          )
       ) : (
         <>
           <Tabs value={tab} onChange={setTab} items={[{ id: "results", label: "Health" }, { id: "records", label: "DNS records" }, { id: "dmarc", label: "DMARC reports" }, { id: "tls", label: "SSL/TLS" }, { id: "history", label: "History" }, { id: "settings", label: "Settings" }]} />

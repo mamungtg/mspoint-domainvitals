@@ -204,7 +204,7 @@ export function CopyField({ label, value }: { label?: string; value: string }) {
     <div>
       {label && <p className="mb-1 text-xs font-medium text-muted">{label}</p>}
       <div className="flex items-stretch overflow-hidden rounded-md border border-line bg-subtle">
-        <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-3 py-2 font-mono text-[13px] text-ink">{value}</code>
+        <code className="min-w-0 flex-1 break-words px-3 py-2 font-mono text-[13px] text-ink">{value}</code>
         <button onClick={copy} className="shrink-0 border-l border-line px-3 text-xs font-semibold text-link hover:bg-surface" aria-label={`Copy ${label ?? "value"}`}>
           {copied ? "Copied" : "Copy"}
         </button>

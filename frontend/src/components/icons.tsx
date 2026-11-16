@@ -18,4 +18,5 @@ export const IconSun = () => <svg {...base}><circle cx="12" cy="12" r="4" /><pat
 export const IconMoon = () => <svg {...base}><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z" /></svg>;
 export const IconChevron = () => <svg {...base}><path d="m9 6 6 6-6 6" /></svg>;
 export const IconPlus = () => <svg {...base}><path d="M12 5v14M5 12h14" /></svg>;
+export const IconTrash = () => <svg {...base}><path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l.8 12.5h9.4L17.5 7" /><path d="M10 11v5M14 11v5" /></svg>;
 export const IconRefresh = () => <svg {...base}><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4.5V11h-6.5" /></svg>;

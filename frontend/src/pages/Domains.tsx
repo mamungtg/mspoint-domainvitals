@@ -1,8 +1,9 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { IconChevron, IconGlobe, IconPlus, IconSearch } from "../components/icons";
+import { IconChevron, IconGlobe, IconPlus, IconSearch, IconTrash } from "../components/icons";
+import { RemoveDomainDialog } from "../components/RemoveDomain";
 import { Alert, Badge, Button, Card, EmptyState, Field, Input, Modal, PageHeader, ScoreBar, Spinner, StatusIcon, Tabs, timeAgo } from "../components/ui";
-import { api, ApiError, canWrite, CHECK_LABEL, CheckName, Domain, errorText } from "../lib/api";
+import { api, ApiError, canWrite, CHECK_LABEL, CheckName, Domain, errorText, isManager } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useApi } from "../lib/useApi";
 import { useWorkspace } from "../lib/workspace";
@@ -48,7 +49,9 @@ export default function Domains() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const { data, error } = useApi<Domain[]>(current ? `/organizations/${current.id}/domains/` : null);
+  const { data, error, reload } = useApi<Domain[]>(current ? `/organizations/${current.id}/domains/` : null);
+  const manager = !current?.is_demo && isManager(current?.role);
+  const [removing, setRemoving] = useState<Domain | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const writable = canWrite(current);
@@ -67,6 +70,7 @@ export default function Domains() {
 
   return (
     <>
+      {removing && <RemoveDomainDialog domain={removing} onClose={() => setRemoving(null)} onRemoved={() => { setRemoving(null); void reload(); }} />}
       <PageHeader title="Domains" description="Every domain this workspace monitors, with its latest scan." actions={addBtn} />
       {error && <Alert>{error}</Alert>}
       {!data && !error && <Spinner />}
@@ -96,7 +100,7 @@ export default function Domains() {
                   <th className="px-3 py-2.5 font-medium">Health</th>
                   {CHECKS.map((c) => <th key={c} className="px-3 py-2.5 text-center font-medium">{CHECK_LABEL[c]}</th>)}
                   <th className="px-3 py-2.5 font-medium">Last scan</th>
-                  <th className="w-10" />
+                  <th className="w-20"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -116,7 +120,16 @@ export default function Domains() {
                       </td>
                     ))}
                     <td className="whitespace-nowrap px-3 py-3 text-muted">{timeAgo(d.latest_scan?.completed_at)}</td>
-                    <td className="pr-4 text-muted" aria-hidden="true"><IconChevron /></td>
+                    <td className="whitespace-nowrap pr-3 text-right text-muted">
+                      {manager && (
+                        <button type="button" aria-label={`Remove ${d.name}`} title="Remove domain"
+                          onClick={(e) => { e.stopPropagation(); setRemoving(d); }}
+                          className="mr-1 inline-flex rounded-md p-1.5 text-muted hover:bg-fail-bg hover:text-fail">
+                          <IconTrash />
+                        </button>
+                      )}
+                      <span aria-hidden="true" className="inline-flex align-middle"><IconChevron /></span>
+                    </td>
                   </tr>
                 ))}
                 {rows.length === 0 && <tr><td colSpan={8} className="px-5 py-8 text-center text-muted">No domains match this view.</td></tr>}
