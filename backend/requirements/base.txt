@@ -13,3 +13,4 @@ defusedxml==0.7.1
 stripe==11.6.0
 reportlab==4.2.5
 pillow==13.0.0
+sentry-sdk[django,celery]==2.75.0

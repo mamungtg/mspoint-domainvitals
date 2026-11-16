@@ -5,6 +5,8 @@ name: domainvitals
 x-app: &app
   image: ${IMAGE_PREFIX:?}-backend:${IMAGE_TAG:?}
   env_file: .env
+  environment:
+    IMAGE_TAG: ${IMAGE_TAG:?}  # release name for error reports
   restart: unless-stopped
   depends_on:
     db: { condition: service_healthy }
