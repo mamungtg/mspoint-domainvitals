@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from apps.domains.validation import InvalidDomain, normalize_domain
 from apps.domains.views import _domain_for
+from common.public import PublicToolView
 
 from .models import DnsChange, DnsScan
 from .propagation import RECORD_TYPES, check_propagation
@@ -108,10 +109,8 @@ class DomainPropagationView(APIView):
         return Response(check_propagation(name, rtype, resolver=resolver_for(domain) if demo else None, live=not demo))
 
 
-class ToolPropagationView(APIView):
-    """Propagation for any public name (Domain checker). Read-only DNS queries."""
-
-    throttle_scope = "tools"
+class ToolPropagationView(PublicToolView):
+    """Propagation for any public name (checker and public tools). Read-only DNS queries."""
 
     @extend_schema(request=PropagationQuery, responses={200: dict}, tags=["tools"])
     def post(self, request):

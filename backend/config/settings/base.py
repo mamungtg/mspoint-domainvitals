@@ -125,6 +125,9 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 25,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.envelope_exception_handler",
+    # nginx replaces X-Forwarded-For with the real client IP (see
+    # infrastructure/nginx/snippets/cloudflare-realip.conf); trust exactly one hop.
+    "NUM_PROXIES": 1,
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.ScopedRateThrottle",
     ],
@@ -135,6 +138,8 @@ REST_FRAMEWORK = {
         "verify_email": env("THROTTLE_VERIFY_EMAIL", default="20/hour"),
         "invite": env("THROTTLE_INVITE", default="30/hour"),
         "tools": env("THROTTLE_TOOLS", default="30/hour"),
+        "public_tools": env("THROTTLE_PUBLIC_TOOLS", default="20/hour"),
+        "public_ssl": env("THROTTLE_PUBLIC_SSL", default="10/hour"),
         "domain_write": env("THROTTLE_DOMAIN_WRITE", default="60/hour"),
     },
 }
