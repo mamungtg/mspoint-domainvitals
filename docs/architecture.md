@@ -23,6 +23,7 @@
 | `ssl_monitor` | Monitored hosts, TLS handshakes, certificate evaluation, expiry reports. |
 | `dmarc` | Aggregate report ingestion (mailbox and upload), sender identification, DMARC dashboards. |
 | `alerts` | Alerts raised from scans and reports; email, Slack, Teams and webhook delivery. |
+| `reports` | PDF reports (ReportLab), white-label branding, monthly mailing. |
 | `billing` | Plans and limits, 14-day trial, Stripe Checkout, Customer Portal and webhooks. |
 
 ## Scheduled jobs
@@ -33,6 +34,7 @@
 | `dns_monitor.recheck_verifications` | 6 h | Confirms the verification TXT is still published; monitoring stops after three days without it. |
 | `ssl_monitor.schedule_due_tls_scans` | 30 min | Queues TLS scans that are due. |
 | `dmarc.poll_dmarc_mailbox` | 10 min | Reads new DMARC reports from the reporting mailbox. |
+| `reports.send_monthly_reports` | 6 h | Mails the monthly PDF once per month (from the 1st). |
 | `dmarc.prune_old_reports` | 24 h | Deletes reports past the retention period. |
 
 ## Scoring

@@ -11,3 +11,5 @@ cryptography==44.0.0
 certifi==2024.12.14
 defusedxml==0.7.1
 stripe==11.6.0
+reportlab==4.2.5
+pillow==11.1.0
