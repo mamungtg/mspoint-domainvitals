@@ -33,9 +33,14 @@ PERMS = [IsAuthenticated, IsStaff]
 PAID = (BillingAccount.Status.ACTIVE, BillingAccount.Status.PAST_DUE)
 
 
+def _manual(b: BillingAccount | None) -> bool:
+    """Plan given by hand (set_plan: own workspace, Enterprise contract, comp), not a Stripe subscription."""
+    return bool(b and b.status in PAID and not b.stripe_subscription_id)
+
+
 def _monthly_value(b: BillingAccount | None) -> float:
-    """Recurring revenue per month of a paying subscription (yearly / 12)."""
-    if not b or b.status not in PAID:
+    """Recurring revenue per month of a paying Stripe subscription (yearly / 12)."""
+    if not b or b.status not in PAID or _manual(b):
         return 0.0
     price = (PLANS.get(b.plan) or {}).get("price")
     if not price:
@@ -59,7 +64,9 @@ def _billing(b: BillingAccount | None) -> dict:
     return {
         "plan": b.plan,
         "effective_plan": b.effective_plan,
-        "status": "trial_ended" if b.status == BillingAccount.Status.TRIALING and not b.trial_active else b.status,
+        "status": "manual"
+        if _manual(b)
+        else ("trial_ended" if b.status == BillingAccount.Status.TRIALING and not b.trial_active else b.status),
         "interval": b.interval,
         "trial_ends_at": b.trial_ends_at,
         "current_period_end": b.current_period_end,
@@ -88,7 +95,11 @@ def _workspaces(params):
     now = timezone.now()
     if status == "trialing":
         qs = qs.filter(billing__status=BillingAccount.Status.TRIALING, billing__trial_ends_at__gt=now)
-    elif status in ("active", "past_due", "canceled"):
+    elif status in ("active", "past_due"):
+        qs = qs.filter(billing__status=status).exclude(billing__stripe_subscription_id="")
+    elif status == "manual":
+        qs = qs.filter(billing__status__in=PAID, billing__stripe_subscription_id="")
+    elif status == "canceled":
         qs = qs.filter(billing__status=status)
     elif status == "free":
         qs = qs.exclude(billing__status__in=PAID).exclude(
@@ -133,7 +144,7 @@ class OverviewView(APIView):
         accounts = list(BillingAccount.objects.filter(organization__is_demo=False))
         by_plan: dict[str, int] = {}
         for b in accounts:
-            if b.status in PAID:
+            if b.status in PAID and not _manual(b):
                 by_plan[b.plan] = by_plan.get(b.plan, 0) + 1
         return Response(
             {
@@ -143,8 +154,9 @@ class OverviewView(APIView):
                 "signups_30d": users.filter(created_at__gte=now - timedelta(days=30)).count(),
                 "workspaces": orgs.count(),
                 "trialing": sum(1 for b in accounts if b.trial_active),
-                "paying": sum(1 for b in accounts if b.status == BillingAccount.Status.ACTIVE),
-                "past_due": sum(1 for b in accounts if b.status == BillingAccount.Status.PAST_DUE),
+                "paying": sum(1 for b in accounts if b.status == BillingAccount.Status.ACTIVE and not _manual(b)),
+                "past_due": sum(1 for b in accounts if b.status == BillingAccount.Status.PAST_DUE and not _manual(b)),
+                "manual": sum(1 for b in accounts if _manual(b)),
                 "paying_by_plan": by_plan,
                 "mrr": round(sum(_monthly_value(b) for b in accounts), 2),
                 "domains": Domain.objects.filter(organization__is_demo=False).count(),

@@ -19,7 +19,7 @@ type UserRow = {
 type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 type Overview = {
   users: number; users_unverified: number; signups_7d: number; signups_30d: number; workspaces: number; trialing: number;
-  paying: number; past_due: number; paying_by_plan: Record<string, number>; mrr: number; domains: number; verified_domains: number;
+  paying: number; past_due: number; manual: number; paying_by_plan: Record<string, number>; mrr: number; domains: number; verified_domains: number;
   trials_ending_7d: { id: string; name: string; trial_ends_at: string }[];
 };
 
@@ -33,7 +33,7 @@ const td = "px-4 py-3 align-top";
 export function StatusBadge({ b }: { b: Billing }) {
   const map: Record<string, [string, "pass" | "warn" | "fail" | "brand" | "neutral"]> = {
     active: ["Paying", "pass"], trialing: ["Trial", "brand"], past_due: ["Payment overdue", "fail"],
-    trial_ended: ["Trial ended", "warn"], canceled: ["Canceled", "neutral"], free: ["Free", "neutral"],
+    trial_ended: ["Trial ended", "warn"], manual: ["Set by hand", "brand"], canceled: ["Canceled", "neutral"], free: ["Free", "neutral"],
   };
   const [label, tone] = map[b.status] ?? [b.status, "neutral"];
   return <Badge tone={tone}>{label}</Badge>;
@@ -86,7 +86,8 @@ function OverviewTab() {
         <KpiTile label="Users" value={data.users} sub={`${data.users_unverified} not confirmed`} />
         <KpiTile label="Sign-ups, 7 days" value={data.signups_7d} />
         <KpiTile label="Sign-ups, 30 days" value={data.signups_30d} />
-        <KpiTile label="Paying by plan" value={plans.length ? plans.map(([p, n]) => `${n} ${cap(p)}`).join(" · ") : "—"} />
+        <KpiTile label="Paying by plan" value={plans.length ? plans.map(([p, n]) => `${n} ${cap(p)}`).join(" · ") : "—"}
+          sub={data.manual ? `+ ${data.manual} set by hand (no Stripe subscription)` : undefined} />
       </div>
       <Card title="Trials ending in the next 7 days" description="Good moment to reach out." padded={false}>
         {data.trials_ending_7d.length === 0 ? <p className="px-5 py-6 text-sm text-muted">None.</p> : (
@@ -119,7 +120,7 @@ function WorkspacesTab() {
         <div className="min-w-[220px] flex-1"><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search workspace, owner email or domain" aria-label="Search workspaces" /></div>
         <div className="w-44"><Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
           <option value="">All workspaces</option><option value="active">Paying</option><option value="trialing">On trial</option>
-          <option value="past_due">Payment overdue</option><option value="free">Free / trial ended</option><option value="canceled">Canceled</option>
+          <option value="past_due">Payment overdue</option><option value="manual">Set by hand</option><option value="free">Free / trial ended</option><option value="canceled">Canceled</option>
         </Select></div>
         <a className={`${link} text-sm`} href={`/api/v1/staff/workspaces/?${exportQs}`}>Export CSV</a>
       </div>
