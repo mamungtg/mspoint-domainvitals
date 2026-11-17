@@ -150,7 +150,7 @@ export const LEGAL: LegalDoc[] = [
         "If MSPoint is involved in a merger, acquisition or sale of assets, data may transfer to the new owner under this policy.",
       ] },
       { h: "5. International transfers", body: [
-        "MSPoint is a US company, and we and our subprocessors may process data in the United States and other countries. Where data protection law requires it, transfers from the EEA, UK or Switzerland rely on the European Commission's Standard Contractual Clauses (and the UK Addendum), or another valid transfer mechanism.",
+        "MSPoint is a US company. The DomainVitals application servers and database are located in the United States, and our subprocessors process data in the United States and other countries. Where data protection law requires it, transfers from the EEA, UK or Switzerland rely on the European Commission's Standard Contractual Clauses (and the UK Addendum), or another valid transfer mechanism.",
       ] },
       { h: "6. How long we keep data", body: [
         { ul: [
@@ -228,6 +228,7 @@ export const LEGAL: LegalDoc[] = [
           ["Parties", "Data exporter: the Customer (controller). Data importer: MSPoint LLC, Wyoming, USA (processor); contact privacy@mspointit.com."],
           ["Subject matter and purpose", "Monitoring the Customer's domains (DNS, mail authentication, certificates), processing DMARC aggregate reports, sending alerts and reports, and managing the Customer's workspace."],
           ["Duration", "The term of the Terms, plus the deletion period in section 7."],
+          ["Location", "Application servers and database in the United States; subprocessors as listed in Annex III."],
           ["Data subjects", "The Customer's team members and invitees; recipients of alerts and reports; the Customer's clients' contacts; people whose details appear in DMARC reports or monitored DNS records."],
           ["Personal data", "Names, email addresses, IP addresses and host names of sending mail servers, webhook URLs, data in DNS records and certificates, audit log entries."],
           ["Sensitive data", "None intended. The Customer must not put special categories of data into the Service."],
