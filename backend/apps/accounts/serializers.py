@@ -7,8 +7,8 @@ from .models import User, normalize_email_address
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "email_verified", "mfa_enabled", "created_at"]
-        read_only_fields = ["id", "email", "email_verified", "mfa_enabled", "created_at"]
+        fields = ["id", "email", "full_name", "email_verified", "mfa_enabled", "is_staff", "created_at"]
+        read_only_fields = ["id", "email", "email_verified", "mfa_enabled", "is_staff", "created_at"]
 
 
 class RegisterSerializer(serializers.Serializer):

@@ -116,6 +116,7 @@ Disallow: /reports
 Disallow: /settings
 Disallow: /onboarding
 Disallow: /invite
+Disallow: /staff
 
 Sitemap: ${SITE}/sitemap.xml
 `);
