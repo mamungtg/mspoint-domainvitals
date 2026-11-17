@@ -70,7 +70,7 @@ export function errorText(err: unknown, fallback = "Something went wrong. Please
   return e?.message || fallback;
 }
 
-export type User = { id: string; email: string; full_name: string; email_verified: boolean; created_at: string };
+export type User = { id: string; email: string; full_name: string; email_verified: boolean; is_staff?: boolean; created_at: string };
 export type Role = "owner" | "admin" | "member" | "viewer";
 export type Organization = {
   id: string; name: string; slug: string; timezone: string; status: string; is_demo: boolean; role: Role | null; created_at: string;

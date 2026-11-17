@@ -31,12 +31,16 @@ const GROUPS: { title: string; items: NavItem[] }[] = [
   ] },
 ];
 
+const STAFF_GROUP = { title: "MSPoint staff", items: [{ to: "/staff", label: "Customers", icon: IconUsers }] as NavItem[] };
+
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const { user } = useAuth();
+  const groups = user?.is_staff ? [...GROUPS, STAFF_GROUP] : GROUPS;
   return (
     <div className="flex h-full flex-col bg-navy-900 text-navy-100">
       <Link to="/dashboard" onClick={onNavigate} className="block px-5 pb-6 pt-6" aria-label="DomainVitals overview"><Logo inverse /></Link>
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6" aria-label="Main">
-        {GROUPS.map((g) => (
+        {groups.map((g) => (
           <div key={g.title}>
             <p className="px-3 pb-1.5 text-xs font-medium text-navy-100/50">{g.title}</p>
             <div className="space-y-0.5">

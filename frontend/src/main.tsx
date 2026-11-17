@@ -25,6 +25,7 @@ import Members from "./pages/Members";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import Register from "./pages/Register";
+import Staff, { StaffWorkspace } from "./pages/Staff";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
@@ -68,6 +69,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/settings/members" element={<Members />} />
                   <Route path="/settings/workspace" element={<WorkspaceSettings />} />
                   <Route path="/settings" element={<Navigate to="/settings/workspace" replace />} />
+                  <Route path="/staff" element={<Staff />} />
+                  <Route path="/staff/workspaces/:id" element={<StaffWorkspace />} />
                 </Route>
               </Route>
             </Route>
