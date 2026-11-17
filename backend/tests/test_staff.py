@@ -21,7 +21,8 @@ def world(make_user, make_org):
     org_b = make_org(b, "=HYPERLINK(evil)")
     Domain.objects.create(organization=org_a, name="agency-a.com", verified_at=timezone.now())
     BillingAccount.objects.update_or_create(
-        organization=org_a, defaults={"plan": "agency", "status": "active", "interval": "month"}
+        organization=org_a,
+        defaults={"plan": "agency", "status": "active", "interval": "month", "stripe_subscription_id": "sub_1"},
     )
     BillingAccount.objects.update_or_create(
         organization=org_b,
@@ -83,3 +84,15 @@ def test_users_list_and_staff_command(world, client_for):
     call_command("staff", "owner@agency.test", "--remove")
     world["a"].refresh_from_db()
     assert not world["a"].is_staff
+
+
+def test_plans_set_by_hand_are_not_revenue(world, client_for, make_org):
+    own = make_org(world["staff"], "MSPoint")
+    call_command("set_plan", "MSPoint", "enterprise")
+    c = client_for(world["staff"])
+    d = c.get("/api/v1/staff/overview/").data
+    assert d["paying"] == 1 and d["manual"] == 1 and d["mrr"] == 79 and d["paying_by_plan"] == {"agency": 1}
+    rows = c.get("/api/v1/staff/workspaces/?status=manual").data["results"]
+    assert [r["name"] for r in rows] == ["MSPoint"] and rows[0]["billing"]["status"] == "manual"
+    assert [r["name"] for r in c.get("/api/v1/staff/workspaces/?status=active").data["results"]] == ["Agency A"]
+    assert own.pk
