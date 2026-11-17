@@ -43,6 +43,11 @@ export default function AuthLayout({ title, subtitle, children, footer }: {
           {subtitle && <p className="mt-2 text-muted">{subtitle}</p>}
           <div className="mt-8">{children}</div>
           {footer && <div className="mt-8 border-t border-line pt-6 text-sm text-muted">{footer}</div>}
+          <p className="mt-6 flex gap-4 text-xs text-muted">
+            <Link to="/legal/terms" className="hover:text-heading hover:underline">Terms</Link>
+            <Link to="/legal/privacy" className="hover:text-heading hover:underline">Privacy</Link>
+            <a href="mailto:support@mspointit.com" className="hover:text-heading hover:underline">Support</a>
+          </p>
         </div>
       </main>
     </div>

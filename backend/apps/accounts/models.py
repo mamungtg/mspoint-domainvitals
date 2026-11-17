@@ -43,6 +43,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     email_verified = models.BooleanField(default=False)
     email_verified_at = models.DateTimeField(null=True, blank=True)
     mfa_enabled = models.BooleanField(default=False)
+    # Version (date) of the Terms of Service / Privacy Policy / DPA accepted at sign-up.
+    terms_version = models.CharField(max_length=20, blank=True)
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     objects = UserManager()

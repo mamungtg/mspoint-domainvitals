@@ -13,6 +13,7 @@ DomainVitals by MSPoint monitors the health of the domains a business sends emai
 | [modules/public-tools.md](modules/public-tools.md) | Free no-login tools, rate limits, SEO prerendering |
 | [modules/reports.md](modules/reports.md) | PDF reports, white-label branding, monthly mail |
 | [api.md](api.md) | REST endpoints (full schema at `/api/v1/docs/`) |
+| [legal.md](legal.md) | Terms, Privacy Policy, DPA: where they live and how to change them |
 | [security.md](security.md) | Security review findings and the controls in place |
 | [operations.md](operations.md) | Deploying, rolling back, everyday server tasks |
 | [roadmap.md](roadmap.md) | Plans, pricing and what is built next |

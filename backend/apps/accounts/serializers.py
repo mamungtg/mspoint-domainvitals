@@ -15,9 +15,17 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
     password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
     full_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    accept_terms = serializers.BooleanField(default=False)
 
     def validate_email(self, value):
         return normalize_email_address(value)
+
+    def validate_accept_terms(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "Accept the Terms of Service and Data Processing Addendum to create an account."
+            )
+        return value
 
     def validate(self, attrs):
         candidate = User(email=attrs["email"], full_name=attrs.get("full_name", ""))

@@ -17,6 +17,7 @@ import Domains from "./pages/Domains";
 import Overview from "./pages/Overview";
 import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
+import LegalPage from "./pages/LegalPage";
 import ToolPage from "./pages/tools/ToolPage";
 import ToolsIndex from "./pages/tools/ToolsIndex";
 import Login from "./pages/Login";
@@ -41,6 +42,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/" element={<Home />} />
             <Route path="/tools" element={<ToolsIndex />} />
             <Route path="/tools/:slug" element={<ToolPage />} />
+            <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
+            <Route path="/legal/:slug" element={<LegalPage />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route element={<GuestOnly />}>

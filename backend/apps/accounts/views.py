@@ -1,7 +1,9 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout, password_validation, update_session_auth_hash
 from django.db import transaction
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from drf_spectacular.utils import extend_schema
@@ -66,7 +68,11 @@ class RegisterView(AnonymousPostView):
             security_log.info("register_existing email=%s ip=%s", data["email"], client_ip(request))
             return Response({"email": data["email"], "verification_required": True}, status=status.HTTP_201_CREATED)
         user = User.objects.create_user(
-            email=data["email"], password=data["password"], full_name=data.get("full_name", "")
+            email=data["email"],
+            password=data["password"],
+            full_name=data.get("full_name", ""),
+            terms_version=settings.LEGAL_TERMS_VERSION,
+            terms_accepted_at=timezone.now(),
         )
         # No session yet: the account can sign in once the email address is confirmed.
         record(request, "user.registered", obj=user, user=user)

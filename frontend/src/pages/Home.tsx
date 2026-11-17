@@ -103,7 +103,12 @@ export default function Home() {
 
       <footer className="bg-navy-900 text-navy-100/70">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm sm:px-8">
-          <span>© {new Date().getFullYear()} MSPoint LLC</span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>© {new Date().getFullYear()} MSPoint LLC</span>
+            <Link to="/legal/terms" className="hover:text-white">Terms</Link>
+            <Link to="/legal/privacy" className="hover:text-white">Privacy</Link>
+            <Link to="/legal/dpa" className="hover:text-white">DPA</Link>
+          </span>
           <span className="flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${apiUp === null ? "bg-navy-100/40" : apiUp ? "bg-[#3fbf86]" : "bg-[#ff6b5e]"}`} aria-hidden="true" />
             {apiUp === null ? "Checking service status" : apiUp ? "All systems operational" : "Service unavailable"}

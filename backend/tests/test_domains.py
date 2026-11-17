@@ -136,7 +136,11 @@ def test_register_creates_demo_workspace(client_for):
     from tests.test_auth import csrf_client
 
     c = csrf_client()
-    r = c.post("/api/v1/auth/register/", {"email": "n@x.com", "password": "Correct-Horse-Battery-9"}, format="json")
+    r = c.post(
+        "/api/v1/auth/register/",
+        {"email": "n@x.com", "password": "Correct-Horse-Battery-9", "accept_terms": True},
+        format="json",
+    )
     assert r.status_code == 201
     from apps.accounts.models import User
 
