@@ -26,3 +26,6 @@ if SENTRY_DSN:  # noqa: F405
         traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,  # noqa: F405
         send_default_pii=False,
     )
+
+# JSON only: no HTML "browsable API" pages in production.
+REST_FRAMEWORK = {**REST_FRAMEWORK, "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"]}  # noqa: F405
