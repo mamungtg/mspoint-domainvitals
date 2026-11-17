@@ -32,23 +32,23 @@ export default function PublicLayout({ children, title, description }: { childre
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-line bg-subtle">
+      <footer className="bg-navy-900 text-navy-100/75">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:px-8 md:grid-cols-[1fr_2fr]">
           <div>
-            <Logo />
-            <p className="mt-3 max-w-xs text-muted">Domain, mail authentication and certificate monitoring for agencies, MSPs and IT teams.</p>
+            <Logo inverse />
+            <p className="mt-3 max-w-xs">Domain, mail authentication and certificate monitoring for agencies, MSPs and IT teams.</p>
           </div>
           <div>
-            <p className="mb-3 font-semibold text-heading">Free tools</p>
+            <p className="mb-3 font-semibold text-white">Free tools</p>
             <ul className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
-              {TOOLS.map((t) => <li key={t.slug}><Link className="text-muted hover:text-heading hover:underline" to={`/tools/${t.slug}`}>{t.name}</Link></li>)}
+              {TOOLS.map((t) => <li key={t.slug}><Link className="hover:text-white hover:underline" to={`/tools/${t.slug}`}>{t.name}</Link></li>)}
             </ul>
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-line px-4 py-4 text-xs text-muted">
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/10 px-4 py-4 text-xs text-navy-100/60">
           <span>© {new Date().getFullYear()} MSPoint LLC · DomainVitals</span>
-          {LEGAL.map((d) => <Link key={d.slug} to={`/legal/${d.slug}`} className="hover:text-heading hover:underline">{d.name}</Link>)}
-          <a href="mailto:support@mspointit.com" className="hover:text-heading hover:underline">support@mspointit.com</a>
+          {LEGAL.map((d) => <Link key={d.slug} to={`/legal/${d.slug}`} className="hover:text-white hover:underline">{d.name}</Link>)}
+          <a href="mailto:support@mspointit.com" className="hover:text-white hover:underline">support@mspointit.com</a>
         </div>
       </footer>
     </div>
