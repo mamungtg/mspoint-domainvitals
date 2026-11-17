@@ -243,6 +243,10 @@ LOGGING = {
 
 ENABLE_ADMIN = env.bool("ENABLE_ADMIN", False)
 
+# --- Legal --------------------------------------------------------------------
+# Must match LEGAL_VERSION in frontend/src/lib/legal.ts; recorded on each sign-up.
+LEGAL_TERMS_VERSION = "2026-11-17"
+
 # --- Monitoring ----------------------------------------------------------------
 # Error tracking is optional: set SENTRY_DSN to send unhandled errors to Sentry.
 SENTRY_DSN = env("SENTRY_DSN", default="")

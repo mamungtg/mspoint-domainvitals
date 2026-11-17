@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { LEGAL } from "../lib/legal";
 import { TOOLS } from "../lib/tools";
 import { Logo } from "./Logo";
 
@@ -44,7 +45,11 @@ export default function PublicLayout({ children, title, description }: { childre
             </ul>
           </div>
         </div>
-        <p className="border-t border-line px-4 py-4 text-center text-xs text-muted">© {new Date().getFullYear()} MSPoint LLC · DomainVitals</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-line px-4 py-4 text-xs text-muted">
+          <span>© {new Date().getFullYear()} MSPoint LLC · DomainVitals</span>
+          {LEGAL.map((d) => <Link key={d.slug} to={`/legal/${d.slug}`} className="hover:text-heading hover:underline">{d.name}</Link>)}
+          <a href="mailto:support@mspointit.com" className="hover:text-heading hover:underline">support@mspointit.com</a>
+        </div>
       </footer>
     </div>
   );

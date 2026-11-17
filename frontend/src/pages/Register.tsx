@@ -12,6 +12,7 @@ export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,12 +22,12 @@ export default function Register() {
     e.preventDefault();
     setBusy(true); setError(""); setFieldErrors({});
     try {
-      const r = await register(email, password, fullName);
+      const r = await register(email, password, fullName, accepted);
       rememberNext(params.get("next"));
       setSentTo(r.email);
     } catch (err) {
       const d = (err as ApiError).details;
-      if (d && (d.email || d.password || d.full_name)) setFieldErrors(d);
+      if (d && (d.email || d.password || d.full_name || d.accept_terms)) setFieldErrors(d);
       else setError(errorText(err, "Registration failed."));
     } finally {
       setBusy(false);
@@ -61,8 +62,20 @@ export default function Register() {
         <Field label="Password" hint="At least 10 characters; avoid common passwords." error={fieldErrors.password?.[0] ?? fieldErrors.non_field_errors?.[0]}>
           <Input type="password" required autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
+        <div>
+          <label className="flex items-start gap-2.5 text-sm text-ink">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-[#14508f]" checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)} aria-invalid={!!fieldErrors.accept_terms} />
+            <span>
+              I agree to the <Link className={linkCls} to="/legal/terms" target="_blank">Terms of Service</Link>, including
+              the <Link className={linkCls} to="/legal/dpa" target="_blank">Data Processing Addendum</Link>, and have read
+              the <Link className={linkCls} to="/legal/privacy" target="_blank">Privacy Policy</Link>.
+            </span>
+          </label>
+          {fieldErrors.accept_terms?.[0] && <p className="mt-1.5 text-xs font-medium text-fail">{fieldErrors.accept_terms[0]}</p>}
+        </div>
         {error && <Alert>{error}</Alert>}
-        <Button type="submit" busy={busy} className="w-full">Create account</Button>
+        <Button type="submit" busy={busy} disabled={!accepted} className="w-full">Create account</Button>
         <p className="text-center text-xs text-muted">We'll email you a link to confirm your address before your first sign-in.</p>
       </form>
     </AuthLayout>

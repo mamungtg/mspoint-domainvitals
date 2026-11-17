@@ -10,13 +10,20 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
 const SITE = (process.env.SITE_URL || "https://app.mspointit.com").replace(/\/$/, "");
 
-// Load the catalogue straight from the TypeScript source (it has no imports).
-const ts = readFileSync(join(root, "src/lib/tools.ts"), "utf8");
-const { code } = await transform(ts, { loader: "ts", format: "esm" });
-const tmp = join(dist, ".tools.mjs");
-writeFileSync(tmp, code);
-const { TOOLS } = await import(pathToFileURL(tmp).href);
-rmSync(tmp);
+// Load catalogues straight from the TypeScript sources (they have no imports).
+async function load(name) {
+  const ts = readFileSync(join(root, `src/lib/${name}.ts`), "utf8");
+  const { code } = await transform(ts, { loader: "ts", format: "esm" });
+  const tmp = join(dist, `.${name}.mjs`);
+  writeFileSync(tmp, code);
+  try {
+    return await import(pathToFileURL(tmp).href);
+  } finally {
+    rmSync(tmp);
+  }
+}
+const { TOOLS } = await load("tools");
+const { LEGAL, LEGAL_UPDATED } = await load("legal");
 
 const shell = readFileSync(join(dist, "index.html"), "utf8");
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -79,8 +86,19 @@ write("/tools", page({
   jsonld: [],
 }));
 
+const block = (b) =>
+  typeof b === "string" ? `<p>${esc(b)}</p>`
+    : b.ul ? `<ul>${b.ul.map((li) => `<li>${esc(li)}</li>`).join("")}</ul>`
+      : `<table>${b.table.map((r, i) => `<tr>${r.map((c) => (i ? `<td>${esc(c)}</td>` : `<th>${esc(c)}</th>`)).join("")}</tr>`).join("")}</table>`;
+for (const d of LEGAL) {
+  const path = `/legal/${d.slug}`;
+  const body = `<main><h1>${esc(d.name)}</h1><p>Last updated ${esc(LEGAL_UPDATED)}</p>${d.intro.map(block).join("")}
+${d.sections.map((s) => `<h2>${esc(s.h)}</h2>${s.body.map(block).join("")}`).join("\n")}</main>`;
+  write(path, page({ path, title: d.title, description: d.description, body, jsonld: [] }));
+}
+
 const today = new Date().toISOString().slice(0, 10);
-const urls = ["/", "/tools", ...TOOLS.map((t) => `/tools/${t.slug}`)];
+const urls = ["/", "/tools", ...TOOLS.map((t) => `/tools/${t.slug}`), ...LEGAL.map((d) => `/legal/${d.slug}`)];
 writeFileSync(join(dist, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${today}</lastmod></url>`).join("\n")}
@@ -89,6 +107,7 @@ ${urls.map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${today}</lastmod></url
 writeFileSync(join(dist, "robots.txt"), `User-agent: *
 Allow: /$
 Allow: /tools
+Allow: /legal
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /domains
@@ -100,4 +119,4 @@ Disallow: /invite
 
 Sitemap: ${SITE}/sitemap.xml
 `);
-console.log(`prerendered ${TOOLS.length + 1} tool pages, sitemap.xml and robots.txt`);
+console.log(`prerendered ${TOOLS.length + 1} tool pages, ${LEGAL.length} legal pages, sitemap.xml and robots.txt`);

@@ -22,7 +22,11 @@ def csrf_client():
 def test_register_requires_confirmation_before_sign_in(django_capture_on_commit_callbacks):
     c = csrf_client()
     with django_capture_on_commit_callbacks(execute=True):
-        r = c.post("/api/v1/auth/register/", {"email": "New@Example.com", "password": PASSWORD}, format="json")
+        r = c.post(
+            "/api/v1/auth/register/",
+            {"email": "New@Example.com", "password": PASSWORD, "accept_terms": True},
+            format="json",
+        )
     assert r.status_code == 201, r.data
     assert r.data == {"email": "new@example.com", "verification_required": True}
     assert c.get("/api/v1/auth/me/").status_code == 403  # no session after sign-up
@@ -78,10 +82,14 @@ def test_register_rejects_weak_password_and_duplicates(make_user):
     make_user("taken@example.com")
     c = csrf_client()
     assert (
-        c.post("/api/v1/auth/register/", {"email": "a@example.com", "password": "123"}, format="json").status_code
+        c.post(
+            "/api/v1/auth/register/", {"email": "a@example.com", "password": "123", "accept_terms": True}, format="json"
+        ).status_code
         == 400
     )
-    r = c.post("/api/v1/auth/register/", {"email": "a@example.com", "password": "123"}, format="json")
+    r = c.post(
+        "/api/v1/auth/register/", {"email": "a@example.com", "password": "123", "accept_terms": True}, format="json"
+    )
     assert r.data["error"]["code"] == "validation_error"
 
 
@@ -90,10 +98,20 @@ def test_register_does_not_reveal_existing_accounts(make_user, django_capture_on
     make_user("pending@example.com", verified=False)
     c = csrf_client()
     with django_capture_on_commit_callbacks(execute=True):
-        new = c.post("/api/v1/auth/register/", {"email": "fresh@example.com", "password": PASSWORD}, format="json")
-        taken = c.post("/api/v1/auth/register/", {"email": "TAKEN@example.com", "password": PASSWORD}, format="json")
+        new = c.post(
+            "/api/v1/auth/register/",
+            {"email": "fresh@example.com", "password": PASSWORD, "accept_terms": True},
+            format="json",
+        )
+        taken = c.post(
+            "/api/v1/auth/register/",
+            {"email": "TAKEN@example.com", "password": PASSWORD, "accept_terms": True},
+            format="json",
+        )
         pending = c.post(
-            "/api/v1/auth/register/", {"email": "pending@example.com", "password": PASSWORD}, format="json"
+            "/api/v1/auth/register/",
+            {"email": "pending@example.com", "password": PASSWORD, "accept_terms": True},
+            format="json",
         )
     assert new.status_code == taken.status_code == pending.status_code == 201
     assert set(taken.data) == set(new.data) and taken.data["verification_required"] is True
@@ -197,3 +215,24 @@ def test_health_is_public():
     assert r.status_code == 200
     assert r.data["checks"]["database"] == "ok"
     assert r["X-Request-ID"]
+
+
+def test_register_requires_accepting_the_terms(settings):
+    c = csrf_client()
+    body = {"email": "terms@example.com", "password": PASSWORD}
+    r = c.post("/api/v1/auth/register/", body, format="json")
+    assert r.status_code == 400 and "accept_terms" in r.data["error"]["details"]
+    assert not User.objects.filter(email="terms@example.com").exists()
+
+    r = c.post("/api/v1/auth/register/", {**body, "accept_terms": True}, format="json")
+    assert r.status_code == 201
+    u = User.objects.get(email="terms@example.com")
+    assert u.terms_version == settings.LEGAL_TERMS_VERSION and u.terms_accepted_at is not None
+
+
+def test_terms_version_matches_the_published_documents(settings):
+    from pathlib import Path
+
+    legal = Path(__file__).resolve().parents[2] / "frontend/src/lib/legal.ts"
+    if legal.exists():  # the backend image does not contain the frontend
+        assert f'LEGAL_VERSION = "{settings.LEGAL_TERMS_VERSION}"' in legal.read_text()
