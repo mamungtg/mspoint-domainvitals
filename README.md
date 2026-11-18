@@ -2,6 +2,14 @@
 
 Email authentication (SPF, DKIM, DMARC), DNS and SSL/TLS monitoring SaaS for agencies and MSPs.
 
+Live at [app.mspointit.com](https://app.mspointit.com) · free tools at [app.mspointit.com/tools](https://app.mspointit.com/tools)
+
+![Overview dashboard: average health score, domains by status, 14-day health trend, DMARC enforcement and certificate expiry across all client domains](docs/images/dashboard.png)
+
+![Domain page: health score with per-check status, the published DMARC and SPF records, and each issue with how to fix it](docs/images/domain-health.png)
+
+<sub>Screenshots use the built-in demo workspace (made-up client domains).</sub>
+
 | Part | Stack |
 |---|---|
 | Backend | Django 5.2 + DRF, PostgreSQL 16, Celery + Redis |
